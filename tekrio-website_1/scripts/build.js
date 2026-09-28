@@ -54,6 +54,12 @@ for (const page of pages) {
   let html = shell
     .replace("{{TITLE}}", page.title)
     .replace("{{DESC}}", page.description)
+    // noindex pages (the 404) get no canonical: it would point search
+    // engines at a URL that doesn't exist
+    .replace(
+      /<link rel="canonical" href="\{\{CANONICAL\}\}">\n/,
+      page.noindex ? "" : `<link rel="canonical" href="${canonical}">\n`
+    )
     .replace(/\{\{CANONICAL\}\}/g, canonical)
     .replace("{{ROBOTS}}", page.noindex ? "noindex, nofollow" : "index, follow")
     .replace("{{SCHEMA}}", page.schema || "")
@@ -69,17 +75,19 @@ for (const page of pages) {
   builtCount++;
 }
 
-// sitemap.xml (skip noindex pages such as 404)
+// sitemap.xml (skip noindex pages such as 404). lastmod is each page's
+// content file date, so search engines can see what actually changed.
 const urls = pages
   .filter((p) => !p.noindex)
   .map((p) => {
     const loc = SITE_URL + (p.out === "index.html" ? "/" : `/${p.out}`);
-    return `  <url><loc>${loc}</loc><changefreq>weekly</changefreq></url>`;
+    const lastmod = fs.statSync(path.join(CONTENT, p.file)).mtime.toISOString().slice(0, 10);
+    return `  <url><loc>${loc}</loc><lastmod>${lastmod}</lastmod></url>`;
   })
   .join("\n");
 fs.writeFileSync(
   path.join(PUBLIC, "sitemap.xml"),
-  `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemap.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`
+  `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`
 );
 
 fs.writeFileSync(

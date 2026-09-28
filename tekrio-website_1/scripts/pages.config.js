@@ -61,7 +61,7 @@ module.exports = [
     active: "customers",
     title: "For Customers - Sell Your Pre-Owned Device | TEKRIO",
     description:
-      "Sell your pre-owned device with offers from multiple verified buyers. Compare offers, choose the one you want, and complete the sale at a trusted TEKRIO retailer.",
+      "Sell your pre-owned device with offers from multiple verified buyers. Compare offers, choose one, and complete the sale at a trusted TEKRIO retailer.",
   },
   {
     file: "for-retailers.html",
@@ -69,7 +69,7 @@ module.exports = [
     active: "retailers",
     title: "For Retailers - Earn More On Every Pre-Owned Device | TEKRIO",
     description:
-      "Register your store on TEKRIO. Earn commission on every pre-owned device transacted, bring in more customers, and let verified buyers make offers via the TEKRIO app.",
+      "Register your store on TEKRIO. Earn commission on every pre-owned device sold, bring in more customers, and let verified buyers make offers.",
   },
   {
     file: "for-buyers.html",
@@ -77,7 +77,7 @@ module.exports = [
     active: "buyers",
     title: "For Buyers - Source Inspected Pre-Owned Devices | TEKRIO",
     description:
-      "Source inspected pre-owned devices listed by partnered retailers. Get IMEI and photo-documented listings in one marketplace feed and cut sourcing cost and time.",
+      "Source inspected pre-owned devices from partnered retailers. IMEI and photo-documented listings in one marketplace feed, with less sourcing cost and time.",
   },
   {
     file: "partner.html",

@@ -17,6 +17,7 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const zlib = require("zlib");
 const { URL } = require("url");
 
 const ROOT = __dirname;
@@ -337,6 +338,66 @@ function requireAuth(res) {
 // ---------------------------------------------------------------------
 // static file serving (with basic path traversal protection)
 // ---------------------------------------------------------------------
+// Text files are compressed (Brotli, else gzip) once and kept in memory
+// until the file changes; the whole site is well under 1 MB.
+const COMPRESSIBLE = new Set([".html", ".css", ".js", ".json", ".svg", ".xml", ".txt", ".webmanifest"]);
+const compressedCache = new Map(); // filePath -> { mtimeMs, br, gzip }
+function compressed(filePath, stat, content, encoding) {
+  let entry = compressedCache.get(filePath);
+  if (!entry || entry.mtimeMs !== stat.mtimeMs) {
+    entry = { mtimeMs: stat.mtimeMs };
+    compressedCache.set(filePath, entry);
+  }
+  if (!entry[encoding]) {
+    entry[encoding] =
+      encoding === "br"
+        ? zlib.brotliCompressSync(content, {
+            params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 11 },
+          })
+        : zlib.gzipSync(content, { level: 9 });
+  }
+  return entry[encoding];
+}
+function pickEncoding(req) {
+  const accept = String(req.headers["accept-encoding"] || "");
+  if (/\bbr\b/.test(accept)) return "br";
+  if (/\bgzip\b/.test(accept)) return "gzip";
+  return null;
+}
+
+function sendFile(req, res, filePath, stat) {
+  const ext = path.extname(filePath).toLowerCase();
+  const lastModified = stat.mtime.toUTCString();
+  // assets aren't fingerprinted, so keep caching short enough that a
+  // redeploy shows up within the hour; HTML always revalidates
+  const headers = {
+    "Content-Type": MIME[ext] || "application/octet-stream",
+    "Cache-Control": ext === ".html" ? "no-cache" : "public, max-age=3600",
+    "Last-Modified": lastModified,
+    Vary: "Accept-Encoding",
+  };
+  const since = Date.parse(req.headers["if-modified-since"] || "");
+  if (since && Math.floor(stat.mtimeMs / 1000) * 1000 <= since) {
+    res.writeHead(304, headers);
+    return res.end();
+  }
+  fs.readFile(filePath, (err, content) => {
+    if (err) return serve404(res);
+    const encoding = COMPRESSIBLE.has(ext) && content.length > 1024 ? pickEncoding(req) : null;
+    let body = content;
+    if (encoding) {
+      body = compressed(filePath, stat, content, encoding);
+      headers["Content-Encoding"] = encoding;
+    }
+    headers["Content-Length"] = body.length;
+    res.writeHead(200, headers);
+    res.end(req.method === "HEAD" ? undefined : body);
+  });
+}
+
+// ---------------------------------------------------------------------
+// static file serving (with basic path traversal protection)
+// ---------------------------------------------------------------------
 function serveStatic(req, res, urlPath) {
   let rel;
   try {
@@ -352,26 +413,17 @@ function serveStatic(req, res, urlPath) {
     res.writeHead(403);
     return res.end("Forbidden");
   }
-  fs.readFile(filePath, (err, content) => {
-    if (err) {
-      // try adding .html for pretty URLs like /about
-      const withHtml = filePath + ".html";
-      fs.readFile(withHtml, (err2, content2) => {
-        if (err2) return serve404(res);
-        res.writeHead(200, { "Content-Type": MIME[".html"] });
-        res.end(content2);
-      });
-      return;
-    }
-    const ext = path.extname(filePath).toLowerCase();
-    // assets aren't fingerprinted, so keep caching short enough that a
-    // redeploy shows up within the hour
-    const cache = ext === ".html" ? "no-cache" : "public, max-age=3600";
-    res.writeHead(200, {
-      "Content-Type": MIME[ext] || "application/octet-stream",
-      "Cache-Control": cache,
+  fs.stat(filePath, (err, stat) => {
+    if (!err && stat.isFile()) return sendFile(req, res, filePath, stat);
+    // "/about" -> 301 to "/about.html", so each page has one URL
+    fs.stat(filePath + ".html", (err2, stat2) => {
+      if (err2 || !stat2.isFile()) return serve404(res);
+      // build the target from the resolved file, never from the raw URL,
+      // so a path like "//about" can't become a redirect to another host
+      const target = "/" + path.relative(PUBLIC_DIR, filePath).split(path.sep).join("/") + ".html";
+      res.writeHead(301, { Location: target });
+      res.end();
     });
-    res.end(content);
   });
 }
 
@@ -625,6 +677,10 @@ const server = http.createServer(async (req, res) => {
     }
 
     // ---- portal placeholders (pending app/API + OTP login) ----
+    if (pathname.startsWith("/portal/")) {
+      // placeholder pages: keep them out of search results
+      res.setHeader("X-Robots-Tag", "noindex, nofollow");
+    }
     if (pathname === "/portal/retailer-login") {
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
       return res.end(renderPortalPage("retailer"));

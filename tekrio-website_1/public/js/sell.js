@@ -62,10 +62,25 @@
   });
 
   // ---------- validation ----------
+  // show/clear a field's error and expose it to screen readers: the
+  // control is marked invalid and points at its message
+  var errorSeq = 0;
   function setFieldError(field, message) {
     field.classList.toggle("invalid", !!message);
     var err = field.querySelector(".field-error");
-    if (err) err.textContent = message || "";
+    if (!err) return;
+    err.textContent = message || "";
+    if (!err.id) err.id = "field-error-" + ++errorSeq;
+    field.querySelectorAll("input, select, textarea").forEach(function (input) {
+      if (input.type === "hidden") return;
+      if (message) {
+        input.setAttribute("aria-invalid", "true");
+        input.setAttribute("aria-describedby", err.id);
+      } else {
+        input.removeAttribute("aria-invalid");
+        input.removeAttribute("aria-describedby");
+      }
+    });
   }
   function validateStep(stepEl) {
     var valid = true;
@@ -99,21 +114,32 @@
   }
 
   // ---------- step navigation ----------
-  function showStep(n) {
-    current = n;
-    steps.forEach(function (s) { s.hidden = Number(s.getAttribute("data-step")) !== n; });
+  // the tracker tells screen readers which step is current, not just colour
+  function markJourney(n) {
     journey.forEach(function (li) {
       var j = Number(li.getAttribute("data-journey"));
       li.classList.toggle("is-active", j === n);
       li.classList.toggle("is-done", j < n);
+      if (j === n) li.setAttribute("aria-current", "step");
+      else li.removeAttribute("aria-current");
     });
+  }
+  function showStep(n) {
+    current = n;
+    steps.forEach(function (s) { s.hidden = Number(s.getAttribute("data-step")) !== n; });
+    markJourney(n);
     var focusable = steps[n - 1].querySelector("input:not([type=hidden]), select");
     if (focusable) focusable.focus({ preventScroll: true });
     document.getElementById("journey").scrollIntoView({ behavior: "smooth", block: "start" });
   }
+  function focusFirstError(stepEl) {
+    var bad = stepEl.querySelector("[aria-invalid=true]");
+    if (bad) bad.focus();
+  }
   form.querySelectorAll("[data-next]").forEach(function (btn) {
     btn.addEventListener("click", function () {
       if (validateStep(steps[current - 1])) showStep(current + 1);
+      else focusFirstError(steps[current - 1]);
     });
   });
   form.querySelectorAll("[data-back]").forEach(function (btn) {
@@ -125,7 +151,7 @@
     e.preventDefault();
     statusEl.className = "form-status";
     statusEl.textContent = "";
-    if (!validateStep(steps[current - 1])) return;
+    if (!validateStep(steps[current - 1])) return focusFirstError(steps[current - 1]);
 
     var payload = {};
     new FormData(form).forEach(function (value, key) { payload[key] = value; });
@@ -155,11 +181,7 @@
         document.getElementById("sellRef").textContent = result.data.reference || "";
         form.hidden = true;
         document.getElementById("sellDone").hidden = false;
-        journey.forEach(function (li) {
-          var j = Number(li.getAttribute("data-journey"));
-          li.classList.toggle("is-done", j < 3);
-          li.classList.toggle("is-active", j === 3);
-        });
+        markJourney(3);
         document.getElementById("journey").scrollIntoView({ behavior: "smooth", block: "start" });
         if (window.gtag) window.gtag("event", "generate_lead", { lead_type: "sell" });
       })
