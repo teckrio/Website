@@ -59,7 +59,7 @@ module.exports = [
     file: "for-customers.html",
     out: "for-customers.html",
     active: "customers",
-    title: "For Customers - Sell Your Pre-Owned Device | TEKRIO",
+    title: "Sell Your Old Phone or Device for the Right Price | TEKRIO",
     description:
       "Sell your pre-owned device with offers from multiple verified buyers. Compare offers, choose one, and complete the sale at a TEKRIO partnered store.",
   },
