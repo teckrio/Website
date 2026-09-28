@@ -91,7 +91,11 @@ function isRateLimited(ip) {
 // lead schema validation per form type — mirrors the Section 5 brief:
 //   Customer: Name, Mobile, City, Phone Brand/Model
 //   Retailer: Store Name, Owner Name, Mobile, City, GST (optional)
-//   Vendor:   Business Name, Mobile, City, GST/PAN
+//   Vendor:   Business Name, Mobile, City, GST/PAN  (shown as "Buyer" on the
+//             site; kept as "vendor" to match the app backend's role name)
+//   Sell:     website "Sell Your Device" journey — device fields use the
+//             same names/values as the app backend's catalog so the request
+//             can be turned into a device listing without remapping
 // plus partner + contact, which the brief doesn't specify fields for.
 // ---------------------------------------------------------------------
 const SCHEMAS = {
@@ -106,6 +110,13 @@ const SCHEMAS = {
   vendor: {
     required: ["businessName", "mobile", "city", "gstOrPan"],
     optional: [],
+  },
+  sell: {
+    required: ["platform", "brand", "model", "storage", "name", "mobile", "city", "pincode"],
+    optional: [
+      "ram", "batteryHealth", "screenDamage", "bodyScratches", "deviceAge",
+      "box", "bill", "charger", "catalogVersion",
+    ],
   },
   partner: {
     required: ["name", "company", "mobile", "city", "partnershipType"],
@@ -139,6 +150,17 @@ function validateLead(type, body) {
   }
   if (body.email && !isValidEmail(body.email)) {
     return { ok: false, message: "Enter a valid email address." };
+  }
+  if (type === "sell") {
+    if (!["apple", "android"].includes(body.platform)) {
+      return { ok: false, message: "Select Apple or Android." };
+    }
+    if (!/^[1-9]\d{5}$/.test(String(body.pincode).trim())) {
+      return { ok: false, message: "Enter a valid 6-digit pincode." };
+    }
+    if (body.batteryHealth && !/^(100|[1-9]?\d)$/.test(String(body.batteryHealth).trim())) {
+      return { ok: false, message: "Battery health should be a number between 0 and 100." };
+    }
   }
 
   const clean = {};
@@ -181,6 +203,49 @@ function forwardToAppApi(record) {
   } catch (e) {
     console.error("[app-api] forward error:", e.message);
   }
+}
+
+// ---------------------------------------------------------------------
+// device catalog for the website sell journey, proxied from the TEKRIO app
+// backend's public GET /catalog (its CORS doesn't allow the website origin,
+// and caching here keeps the page fast). Falls back to the last good copy,
+// and the browser has its own minimal fallback if this returns an error.
+// ---------------------------------------------------------------------
+const CATALOG_TTL_MS = 60 * 60 * 1000;
+let catalogCache = { data: null, fetchedAt: 0 };
+function fetchJson(url, timeoutMs = 5000) {
+  return new Promise((resolve, reject) => {
+    const target = new URL(url);
+    const lib = target.protocol === "https:" ? require("https") : http;
+    const req = lib.get(target, { timeout: timeoutMs }, (res) => {
+      let raw = "";
+      res.on("data", (c) => (raw += c));
+      res.on("end", () => {
+        if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode}`));
+        try {
+          resolve(JSON.parse(raw));
+        } catch (e) {
+          reject(e);
+        }
+      });
+    });
+    req.on("timeout", () => req.destroy(new Error("timeout")));
+    req.on("error", reject);
+  });
+}
+async function getCatalog() {
+  if (catalogCache.data && Date.now() - catalogCache.fetchedAt < CATALOG_TTL_MS) {
+    return catalogCache.data;
+  }
+  try {
+    const json = await fetchJson(CONFIG.BACKEND_API_BASE_URL + "/catalog");
+    if (!json || !json.data) throw new Error("unexpected catalog shape");
+    catalogCache = { data: json.data, fetchedAt: Date.now() };
+  } catch (e) {
+    console.error("[catalog] fetch failed:", e.message);
+    if (!catalogCache.data) throw e;
+  }
+  return catalogCache.data;
 }
 
 // ---------------------------------------------------------------------
@@ -290,7 +355,7 @@ function escapeHtml(str) {
 // portal placeholder page (retailer/vendor OTP login — pending API)
 // ---------------------------------------------------------------------
 function renderPortalPage(kind) {
-  const label = kind === "retailer" ? "Retailer" : "Vendor";
+  const label = kind === "retailer" ? "Retailer" : "Buyer";
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${label} Login | TEKRIO</title>
@@ -416,7 +481,19 @@ const server = http.createServer(async (req, res) => {
       forwardToAppApi(record); // no-op until APP_API_WEBHOOK_URL is configured
       return sendJson(res, 200, {
         message: "Thanks! Our team will reach out shortly.",
+        reference: record.id.slice(0, 8).toUpperCase(),
       });
+    }
+
+    // ---- device catalog (from the TEKRIO app backend) ----
+    if (pathname === "/api/catalog" && req.method === "GET") {
+      try {
+        const data = await getCatalog();
+        res.setHeader("Cache-Control", "public, max-age=300");
+        return sendJson(res, 200, { data });
+      } catch (e) {
+        return sendJson(res, 503, { message: "Catalog unavailable." });
+      }
     }
 
     // ---- admin dashboard ----
@@ -437,9 +514,20 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
       return res.end(renderPortalPage("retailer"));
     }
-    if (pathname === "/portal/vendor-login") {
+    if (pathname === "/portal/buyer-login") {
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-      return res.end(renderPortalPage("vendor"));
+      return res.end(renderPortalPage("buyer"));
+    }
+
+    // ---- renamed pages (Vendor -> Buyer); keep old links working ----
+    const MOVED = {
+      "/portal/vendor-login": "/portal/buyer-login",
+      "/for-vendors.html": "/for-buyers.html",
+      "/for-vendors": "/for-buyers.html",
+    };
+    if (MOVED[pathname]) {
+      res.writeHead(301, { Location: MOVED[pathname] });
+      return res.end();
     }
 
     // ---- health check ----

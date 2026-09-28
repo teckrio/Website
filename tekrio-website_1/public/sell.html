@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sell Your Device - Get Offers From Verified Buyers | TEKRIO</title>
+<meta name="description" content="Sell your pre-owned phone on TEKRIO. Select your device, add details, and get offers from verified buyers through a partnered retailer near you.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://www.tekrio.in/sell.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="TEKRIO">
+<meta property="og:title" content="{{TITLE}}">
+<meta property="og:description" content="{{DESC}}">
+<meta property="og:url" content="https://www.tekrio.in/sell.html">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#10262B">
+<link rel="icon" href="/images/favicon.svg" type="image/svg+xml">
+<!-- Google Search Console: paste the verification meta tag Search Console
+     gives you for www.tekrio.in here once the property is created, e.g.
+     <meta name="google-site-verification" content="..."> -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+
+<!-- Google Analytics (GA4) — replace G-XXXXXXXXXX once the property is created -->
+<script>window.__TEKRIO_GA_ID = "G-XXXXXXXXXX";</script>
+<script defer src="/js/analytics.js"></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="header-inner">
+    <a href="/" class="brand">
+      <span class="brand-mark">TEKRIO</span>
+      <span class="brand-tag">Connect. Compare. Close.</span>
+    </a>
+    <nav class="main-nav" aria-label="Primary">
+      <a href="/" class="">Home</a>
+      <a href="/how-it-works.html" class="">How It Works</a>
+      <a href="/for-customers.html" class="">For Customers</a>
+      <a href="/for-retailers.html" class="">For Retailers</a>
+      <a href="/for-buyers.html" class="">For Buyers</a>
+      <a href="/partner.html" class="">Partner With Us</a>
+      <a href="/contact.html" class="">Contact</a>
+    </nav>
+    <div class="header-actions">
+      <a href="/sell.html" class="btn btn-gold">Sell Your Device</a>
+      <a href="/portal/retailer-login" class="login-link">Retailer Login</a>
+      <a href="/portal/buyer-login" class="login-link">Buyer Login</a>
+    </div>
+    <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mobilePanel">
+      <span class="visually-hidden">Menu</span>
+      <svg width="22" height="16" viewBox="0 0 22 16" fill="none" aria-hidden="true">
+        <path d="M0 1H22M0 8H22M0 15H22" stroke="currentColor" stroke-width="2"/>
+      </svg>
+    </button>
+  </div>
+  <div class="mobile-panel" id="mobilePanel">
+    <a href="/">Home</a>
+    <a href="/how-it-works.html">How It Works</a>
+    <a href="/for-customers.html">For Customers</a>
+    <a href="/for-retailers.html">For Retailers</a>
+    <a href="/for-buyers.html">For Buyers</a>
+    <a href="/partner.html">Partner With Us</a>
+    <a href="/contact.html">Contact</a>
+    <a href="/portal/retailer-login">Retailer Login</a>
+    <a href="/portal/buyer-login">Buyer Login</a>
+    <div class="mobile-cta">
+      <a href="/sell.html" class="btn btn-gold btn-block">Sell Your Device</a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+<section class="page-hero">
+  <div class="container">
+    <div class="breadcrumb"><a href="/">Home</a> / Sell Your Device</div>
+    <h1>Sell your pre-owned device</h1>
+    <p>Tell us about your device in a couple of minutes. A partnered TEKRIO retailer verifies it, verified buyers make their offers, and you choose the one you want.</p>
+  </div>
+</section>
+
+<section class="section-paper">
+  <div class="container">
+    <ol class="journey" id="journey" aria-label="Selling journey">
+      <li class="is-active" data-journey="1"><span class="journey-num">1</span>Select Device</li>
+      <li data-journey="2"><span class="journey-num">2</span>Add Details</li>
+      <li data-journey="3"><span class="journey-num">3</span>Get Offers</li>
+      <li data-journey="4"><span class="journey-num">4</span>Choose Offer</li>
+      <li data-journey="5"><span class="journey-num">5</span>Complete Transaction</li>
+    </ol>
+
+    <div class="form-card sell-card">
+      <form id="sellForm" novalidate>
+        <input type="text" name="_hp" class="visually-hidden" tabindex="-1" autocomplete="off">
+        <input type="hidden" name="catalogVersion">
+
+        <!-- Step 1: Select Device -->
+        <fieldset class="sell-step" data-step="1">
+          <legend><h2>Select your device</h2></legend>
+          <div class="field" data-field>
+            <span class="field-label">Device type</span>
+            <div class="choice-row" role="radiogroup" aria-label="Device type">
+              <label class="choice"><input type="radio" name="platform" value="apple" required><span>Apple (iPhone)</span></label>
+              <label class="choice"><input type="radio" name="platform" value="android" required><span>Android</span></label>
+            </div>
+            <p class="field-error"></p>
+          </div>
+          <div class="field" data-field data-android-only hidden>
+            <label for="s-brand">Brand</label>
+            <select id="s-brand" name="brand" required>
+              <option value="">Select brand</option>
+              <option>Samsung</option>
+              <option>OnePlus</option>
+              <option>Xiaomi / Redmi</option>
+              <option>Vivo</option>
+              <option>Oppo</option>
+              <option>Realme</option>
+              <option>Google Pixel</option>
+              <option>Motorola</option>
+              <option>Nothing</option>
+              <option>iQOO</option>
+              <option>Other</option>
+            </select>
+            <p class="field-error"></p>
+          </div>
+          <div class="field" data-field>
+            <label for="s-model">Model</label>
+            <input id="s-model" name="model" type="text" required placeholder="e.g. iPhone 13 or Galaxy S22">
+            <p class="field-error"></p>
+          </div>
+          <div class="sell-nav">
+            <span></span>
+            <button type="button" class="btn btn-gold" data-next>Continue</button>
+          </div>
+        </fieldset>
+
+        <!-- Step 2: Add Details -->
+        <fieldset class="sell-step" data-step="2" hidden>
+          <legend><h2>Add device details</h2></legend>
+          <div class="field-pair">
+            <div class="field" data-field>
+              <label for="s-storage">Storage</label>
+              <select id="s-storage" name="storage" required data-catalog-list="storages"><option value="">Select</option></select>
+              <p class="field-error"></p>
+            </div>
+            <div class="field" data-field>
+              <label for="s-ram">RAM <span class="opt">(optional)</span></label>
+              <select id="s-ram" name="ram" data-catalog-list="rams"><option value="">Not sure</option></select>
+              <p class="field-error"></p>
+            </div>
+          </div>
+          <div class="field" data-field>
+            <label for="s-screen">Screen condition</label>
+            <select id="s-screen" name="screenDamage" required data-catalog-field="screenDamage"><option value="">Select</option></select>
+            <p class="field-error"></p>
+          </div>
+          <div class="field" data-field>
+            <label for="s-body">Body condition</label>
+            <select id="s-body" name="bodyScratches" required data-catalog-field="bodyScratches"><option value="">Select</option></select>
+            <p class="field-error"></p>
+          </div>
+          <div class="field-pair">
+            <div class="field" data-field>
+              <label for="s-age">Device age</label>
+              <select id="s-age" name="deviceAge" required data-catalog-field="deviceAge"><option value="">Select</option></select>
+              <p class="field-error"></p>
+            </div>
+            <div class="field" data-field data-rule="battery">
+              <label for="s-battery">Battery health % <span class="opt">(optional)</span></label>
+              <input id="s-battery" name="batteryHealth" type="text" inputmode="numeric" maxlength="3" placeholder="e.g. 87">
+              <p class="field-error"></p>
+            </div>
+          </div>
+          <div class="field">
+            <span class="field-label">Accessories you have</span>
+            <div class="choice-row">
+              <label class="choice"><input type="checkbox" name="box" value="Yes"><span>Box</span></label>
+              <label class="choice"><input type="checkbox" name="bill" value="Yes"><span>Bill</span></label>
+              <label class="choice"><input type="checkbox" name="charger" value="Yes"><span>Charger</span></label>
+            </div>
+          </div>
+          <div class="sell-nav">
+            <button type="button" class="btn btn-outline-dark" data-back>Back</button>
+            <button type="button" class="btn btn-gold" data-next>Continue</button>
+          </div>
+        </fieldset>
+
+        <!-- Step 3: Get Offers -->
+        <fieldset class="sell-step" data-step="3" hidden>
+          <legend><h2>Where should we connect you?</h2></legend>
+          <p class="form-sub">We'll match you with a partnered retailer near you to verify the device and open it for buyer offers.</p>
+          <div class="field" data-field data-rule="text">
+            <label for="s-name">Full name</label>
+            <input id="s-name" name="name" type="text" required autocomplete="name">
+            <p class="field-error"></p>
+          </div>
+          <div class="field" data-field data-rule="mobile">
+            <label for="s-mobile">Mobile number</label>
+            <input id="s-mobile" name="mobile" type="tel" inputmode="numeric" maxlength="10" required autocomplete="tel">
+            <p class="field-error"></p>
+          </div>
+          <div class="field-pair">
+            <div class="field" data-field data-rule="text">
+              <label for="s-city">City</label>
+              <input id="s-city" name="city" type="text" required autocomplete="address-level2">
+              <p class="field-error"></p>
+            </div>
+            <div class="field" data-field data-rule="pincode">
+              <label for="s-pincode">Pincode</label>
+              <input id="s-pincode" name="pincode" type="text" inputmode="numeric" maxlength="6" required autocomplete="postal-code">
+              <p class="field-error"></p>
+            </div>
+          </div>
+          <div class="sell-nav">
+            <button type="button" class="btn btn-outline-dark" data-back>Back</button>
+            <button type="submit" class="btn btn-gold">Get Offers</button>
+          </div>
+          <p class="form-status" role="status"></p>
+          <p class="form-note">By submitting, you agree to our <a href="/privacy-terms.html">Privacy Policy</a> and <a href="/privacy-terms.html#terms">Terms &amp; Conditions</a>. There's no obligation to sell.</p>
+        </fieldset>
+      </form>
+
+      <!-- After submit -->
+      <div class="sell-done" id="sellDone" hidden>
+        <span class="eyebrow-stamp is-light">Request received</span>
+        <h2>Your device is on its way to buyers</h2>
+        <p>Reference: <strong id="sellRef"></strong></p>
+        <p>Here's what happens next:</p>
+        <ol class="next-list">
+          <li><strong>Get offers</strong> &mdash; a partnered retailer near you will contact you to verify the device. Once verified, it opens for offers from verified buyers.</li>
+          <li><strong>Choose offer</strong> &mdash; compare the buyer offers and choose the one you want. There's no obligation to accept.</li>
+          <li><strong>Complete transaction</strong> &mdash; hand over the device at the retailer and get paid.</li>
+        </ol>
+        <p class="form-note">Tip: back up your data before the visit. Questions? Email <a href="mailto:support@tekrio.in">support@tekrio.in</a>.</p>
+        <a href="/" class="btn btn-outline-dark">Back to Home</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="/js/sell.js" defer></script>
+
+</main>
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <span class="brand-mark">TEKRIO</span>
+        <p class="footer-tagline">Connect. Compare. Close.</p>
+        <p>TEKRIO is a pre-owned device marketplace by Anabriya Technologies LLP, connecting customers, retailers and buyers in one transparent ecosystem.</p>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul>
+          <li><a href="/about.html">About Us</a></li>
+          <li><a href="/how-it-works.html">How It Works</a></li>
+          <li><a href="/partner.html">Partner With Us</a></li>
+          <li><a href="/faq.html">FAQs</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>For You</h4>
+        <ul>
+          <li><a href="/sell.html">Sell Your Device</a></li>
+          <li><a href="/for-customers.html">For Customers</a></li>
+          <li><a href="/for-retailers.html">For Retailers</a></li>
+          <li><a href="/for-buyers.html">For Buyers</a></li>
+          <li><a href="/contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="/privacy-terms.html">Privacy Policy</a></li>
+          <li><a href="/privacy-terms.html#terms">Terms &amp; Conditions</a></li>
+          <li><a href="mailto:support@tekrio.in">support@tekrio.in</a></li>
+          <li>Bengaluru, Karnataka</li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; <span id="year">2026</span> Anabriya Technologies LLP. All rights reserved.</span>
+      <span>TEKRIO&trade; is a registered brand of Anabriya Technologies LLP.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="/js/main.js" defer></script>
+</body>
+</html>

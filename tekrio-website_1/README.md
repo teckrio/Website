@@ -14,8 +14,18 @@ routes in `server.js` are already organized by concern.
 ## What's included (done, working)
 
 - **All 10 pages** from the brief: Home, About, How It Works, For
-  Customers, For Retailers, For Vendors, Partner With Us, Contact, FAQ,
-  Privacy Policy & Terms.
+  Customers, For Retailers, For Buyers (formerly For Vendors), Partner
+  With Us, Contact, FAQ, Privacy Policy & Terms.
+- **Sell Your Device** (`/sell.html`): a guided journey (Select Device ->
+  Add Details -> Get Offers -> Choose Offer -> Complete Transaction). Its
+  storage/RAM/condition options come live from the TEKRIO app backend's
+  public `GET /catalog` (proxied and cached for 1 hour at `/api/catalog`,
+  with a built-in fallback), so the website and the retailer app describe
+  devices identically. Submissions are saved as `sell` leads.
+- **Terminology:** the three sides are Customer | Retailer | Buyer. Old
+  `/for-vendors.html` and `/portal/vendor-login` URLs 301-redirect to the
+  Buyer equivalents. Internally the lead type stays `vendor` to match the
+  app backend's role name.
 - **Homepage content matches the brief's exact copy** (headline,
   sub-headline, CTAs, 3-step process, 3-audience section, trust section,
   final CTA, footer).
@@ -46,8 +56,8 @@ As requested, everything that depends on the **TEKRIO mobile app's own
 backend/API** (which doesn't exist yet) is stubbed cleanly rather than
 faked:
 
-1. **Retailer/Vendor OTP login.** `/portal/retailer-login` and
-   `/portal/vendor-login` currently show an honest holding page
+1. **Retailer/Buyer OTP login.** `/portal/retailer-login` and
+   `/portal/buyer-login` currently show an honest holding page
    ("login is on its way") instead of a broken or fake login form, with a
    link to the registration form instead. Once the app exposes an OTP
    login/redirect URL, replace the two routes in `server.js`
@@ -62,8 +72,16 @@ faked:
    TEKRIO_APP_API_KEY=your-bearer-token   # optional
    ```
    No code changes needed — just set the variables and restart.
-3. **"30-second listing in the TEKRIO app" / "live vendor bidding" UI.**
-   These are described on the Retailer/Vendor pages as product features of
+3. **Sell requests -> app backend.** The backend currently has no public
+   endpoint for customer sell requests (`POST /devices` needs a Store
+   Manager login, a `branchId` and both IMEIs). Sell requests are stored
+   locally and sent through the webhook above; once the backend adds an
+   intake endpoint, point `TEKRIO_APP_API_WEBHOOK_URL` at it. The request's
+   device fields (`platform`, `model`, `storage`, `ram`, `batteryHealth`,
+   `screenDamage`, `bodyScratches`, `deviceAge`, `box`, `bill`, `charger`)
+   already use the backend catalog's names and values.
+4. **Retailer listing / buyer offers UI.**
+   These are described on the Retailer/Buyer pages as product features of
    the app itself (marked with an amber "pending" badge), not built as
    part of this website, since they belong to the app's own UI.
 
@@ -130,6 +148,7 @@ Visit `http://localhost:3000`. Admin dashboard: `http://localhost:3000/admin`
 | `PORT` | server port | `3000` |
 | `TEKRIO_ADMIN_USER` | `/admin` username | `admin` |
 | `TEKRIO_ADMIN_PASSWORD` | `/admin` password | `tekrio-admin-2026` (**change this**) |
+| `TEKRIO_BACKEND_API_BASE_URL` | TEKRIO app backend (device catalog) | Railway production URL |
 | `TEKRIO_APP_API_WEBHOOK_URL` | pending — see above | unset (no-op) |
 | `TEKRIO_APP_API_KEY` | pending — see above | unset |
 
@@ -169,9 +188,9 @@ Visit `http://localhost:3000`. Admin dashboard: `http://localhost:3000/admin`
 
 | Form | Fields |
 |---|---|
-| Customer (`/for-customers.html`) | Name, Mobile, City, Phone Brand/Model |
+| Sell (`/sell.html`) | Platform, Brand, Model, Storage, RAM, Screen/Body condition, Device age, Battery health, Box/Bill/Charger, Name, Mobile, City, Pincode |
 | Retailer (`/for-retailers.html`) | Store Name, Owner Name, Mobile, City, GSTIN (optional) |
-| Vendor (`/for-vendors.html`) | Business Name, Mobile, City, GST/PAN |
+| Buyer (`/for-buyers.html`) | Business Name, Mobile, City, GST/PAN |
 | Partner (`/partner.html`) | Name, Company, Mobile, City, Partnership Type, Message |
 | Contact (`/contact.html`) | Name, Email, Mobile, Topic, Message |
 

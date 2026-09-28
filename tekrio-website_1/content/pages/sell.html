@@ -1,0 +1,168 @@
+<section class="page-hero">
+  <div class="container">
+    <div class="breadcrumb"><a href="/">Home</a> / Sell Your Device</div>
+    <h1>Sell your pre-owned device</h1>
+    <p>Tell us about your device in a couple of minutes. A partnered TEKRIO retailer verifies it, verified buyers make their offers, and you choose the one you want.</p>
+  </div>
+</section>
+
+<section class="section-paper">
+  <div class="container">
+    <ol class="journey" id="journey" aria-label="Selling journey">
+      <li class="is-active" data-journey="1"><span class="journey-num">1</span>Select Device</li>
+      <li data-journey="2"><span class="journey-num">2</span>Add Details</li>
+      <li data-journey="3"><span class="journey-num">3</span>Get Offers</li>
+      <li data-journey="4"><span class="journey-num">4</span>Choose Offer</li>
+      <li data-journey="5"><span class="journey-num">5</span>Complete Transaction</li>
+    </ol>
+
+    <div class="form-card sell-card">
+      <form id="sellForm" novalidate>
+        <input type="text" name="_hp" class="visually-hidden" tabindex="-1" autocomplete="off">
+        <input type="hidden" name="catalogVersion">
+
+        <!-- Step 1: Select Device -->
+        <fieldset class="sell-step" data-step="1">
+          <legend><h2>Select your device</h2></legend>
+          <div class="field" data-field>
+            <span class="field-label">Device type</span>
+            <div class="choice-row" role="radiogroup" aria-label="Device type">
+              <label class="choice"><input type="radio" name="platform" value="apple" required><span>Apple (iPhone)</span></label>
+              <label class="choice"><input type="radio" name="platform" value="android" required><span>Android</span></label>
+            </div>
+            <p class="field-error"></p>
+          </div>
+          <div class="field" data-field data-android-only hidden>
+            <label for="s-brand">Brand</label>
+            <select id="s-brand" name="brand" required>
+              <option value="">Select brand</option>
+              <option>Samsung</option>
+              <option>OnePlus</option>
+              <option>Xiaomi / Redmi</option>
+              <option>Vivo</option>
+              <option>Oppo</option>
+              <option>Realme</option>
+              <option>Google Pixel</option>
+              <option>Motorola</option>
+              <option>Nothing</option>
+              <option>iQOO</option>
+              <option>Other</option>
+            </select>
+            <p class="field-error"></p>
+          </div>
+          <div class="field" data-field>
+            <label for="s-model">Model</label>
+            <input id="s-model" name="model" type="text" required placeholder="e.g. iPhone 13 or Galaxy S22">
+            <p class="field-error"></p>
+          </div>
+          <div class="sell-nav">
+            <span></span>
+            <button type="button" class="btn btn-gold" data-next>Continue</button>
+          </div>
+        </fieldset>
+
+        <!-- Step 2: Add Details -->
+        <fieldset class="sell-step" data-step="2" hidden>
+          <legend><h2>Add device details</h2></legend>
+          <div class="field-pair">
+            <div class="field" data-field>
+              <label for="s-storage">Storage</label>
+              <select id="s-storage" name="storage" required data-catalog-list="storages"><option value="">Select</option></select>
+              <p class="field-error"></p>
+            </div>
+            <div class="field" data-field>
+              <label for="s-ram">RAM <span class="opt">(optional)</span></label>
+              <select id="s-ram" name="ram" data-catalog-list="rams"><option value="">Not sure</option></select>
+              <p class="field-error"></p>
+            </div>
+          </div>
+          <div class="field" data-field>
+            <label for="s-screen">Screen condition</label>
+            <select id="s-screen" name="screenDamage" required data-catalog-field="screenDamage"><option value="">Select</option></select>
+            <p class="field-error"></p>
+          </div>
+          <div class="field" data-field>
+            <label for="s-body">Body condition</label>
+            <select id="s-body" name="bodyScratches" required data-catalog-field="bodyScratches"><option value="">Select</option></select>
+            <p class="field-error"></p>
+          </div>
+          <div class="field-pair">
+            <div class="field" data-field>
+              <label for="s-age">Device age</label>
+              <select id="s-age" name="deviceAge" required data-catalog-field="deviceAge"><option value="">Select</option></select>
+              <p class="field-error"></p>
+            </div>
+            <div class="field" data-field data-rule="battery">
+              <label for="s-battery">Battery health % <span class="opt">(optional)</span></label>
+              <input id="s-battery" name="batteryHealth" type="text" inputmode="numeric" maxlength="3" placeholder="e.g. 87">
+              <p class="field-error"></p>
+            </div>
+          </div>
+          <div class="field">
+            <span class="field-label">Accessories you have</span>
+            <div class="choice-row">
+              <label class="choice"><input type="checkbox" name="box" value="Yes"><span>Box</span></label>
+              <label class="choice"><input type="checkbox" name="bill" value="Yes"><span>Bill</span></label>
+              <label class="choice"><input type="checkbox" name="charger" value="Yes"><span>Charger</span></label>
+            </div>
+          </div>
+          <div class="sell-nav">
+            <button type="button" class="btn btn-outline-dark" data-back>Back</button>
+            <button type="button" class="btn btn-gold" data-next>Continue</button>
+          </div>
+        </fieldset>
+
+        <!-- Step 3: Get Offers -->
+        <fieldset class="sell-step" data-step="3" hidden>
+          <legend><h2>Where should we connect you?</h2></legend>
+          <p class="form-sub">We'll match you with a partnered retailer near you to verify the device and open it for buyer offers.</p>
+          <div class="field" data-field data-rule="text">
+            <label for="s-name">Full name</label>
+            <input id="s-name" name="name" type="text" required autocomplete="name">
+            <p class="field-error"></p>
+          </div>
+          <div class="field" data-field data-rule="mobile">
+            <label for="s-mobile">Mobile number</label>
+            <input id="s-mobile" name="mobile" type="tel" inputmode="numeric" maxlength="10" required autocomplete="tel">
+            <p class="field-error"></p>
+          </div>
+          <div class="field-pair">
+            <div class="field" data-field data-rule="text">
+              <label for="s-city">City</label>
+              <input id="s-city" name="city" type="text" required autocomplete="address-level2">
+              <p class="field-error"></p>
+            </div>
+            <div class="field" data-field data-rule="pincode">
+              <label for="s-pincode">Pincode</label>
+              <input id="s-pincode" name="pincode" type="text" inputmode="numeric" maxlength="6" required autocomplete="postal-code">
+              <p class="field-error"></p>
+            </div>
+          </div>
+          <div class="sell-nav">
+            <button type="button" class="btn btn-outline-dark" data-back>Back</button>
+            <button type="submit" class="btn btn-gold">Get Offers</button>
+          </div>
+          <p class="form-status" role="status"></p>
+          <p class="form-note">By submitting, you agree to our <a href="/privacy-terms.html">Privacy Policy</a> and <a href="/privacy-terms.html#terms">Terms &amp; Conditions</a>. There's no obligation to sell.</p>
+        </fieldset>
+      </form>
+
+      <!-- After submit -->
+      <div class="sell-done" id="sellDone" hidden>
+        <span class="eyebrow-stamp is-light">Request received</span>
+        <h2>Your device is on its way to buyers</h2>
+        <p>Reference: <strong id="sellRef"></strong></p>
+        <p>Here's what happens next:</p>
+        <ol class="next-list">
+          <li><strong>Get offers</strong> &mdash; a partnered retailer near you will contact you to verify the device. Once verified, it opens for offers from verified buyers.</li>
+          <li><strong>Choose offer</strong> &mdash; compare the buyer offers and choose the one you want. There's no obligation to accept.</li>
+          <li><strong>Complete transaction</strong> &mdash; hand over the device at the retailer and get paid.</li>
+        </ol>
+        <p class="form-note">Tip: back up your data before the visit. Questions? Email <a href="mailto:support@tekrio.in">support@tekrio.in</a>.</p>
+        <a href="/" class="btn btn-outline-dark">Back to Home</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="/js/sell.js" defer></script>

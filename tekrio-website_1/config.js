@@ -10,6 +10,13 @@ module.exports = {
   ADMIN_USER: process.env.TEKRIO_ADMIN_USER || "admin",
   ADMIN_PASSWORD: process.env.TEKRIO_ADMIN_PASSWORD || "tekrio-admin-2026",
 
+  // TEKRIO app backend (same backend the Store Manager and Buyer apps use).
+  // The public /catalog endpoint drives the device options on the website's
+  // "Sell Your Device" journey so both stay in sync.
+  BACKEND_API_BASE_URL:
+    process.env.TEKRIO_BACKEND_API_BASE_URL ||
+    "https://backend-production-17e07.up.railway.app/api/v1",
+
   // ---- PENDING: TEKRIO app/API connection ----
   // Once the TEKRIO mobile app's backend exposes an API/webhook for
   // receiving leads and handling OTP login, set these and the server
