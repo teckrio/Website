@@ -56,6 +56,14 @@ function versioned(html) {
   });
 }
 
+function escapeAttr(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
 let builtCount = 0;
 
 for (const page of pages) {
@@ -68,23 +76,38 @@ for (const page of pages) {
   const content = fs.readFileSync(contentPath, "utf8");
   const canonical = SITE_URL + (page.out === "index.html" ? "/" : `/${page.out}`);
 
-  let html = shell
-    .replace("{{TITLE}}", page.title)
-    .replace("{{DESC}}", page.description)
-    // noindex pages (the 404) get no canonical: it would point search
-    // engines at a URL that doesn't exist
-    .replace(
-      /<link rel="canonical" href="\{\{CANONICAL\}\}">\n/,
-      page.noindex ? "" : `<link rel="canonical" href="${canonical}">\n`
-    )
-    .replace(/\{\{CANONICAL\}\}/g, canonical)
-    .replace("{{ROBOTS}}", page.noindex ? "noindex, nofollow" : "index, follow")
-    .replace("{{SCHEMA}}", page.schema || "")
-    .replace("{{GA_ID}}", GA_ID)
-    .replace("{{GSC_VERIFICATION}}", gscTag)
-    .replace("{{HEADER}}", renderHeader(page.active))
-    .replace("{{FOOTER}}", footerTpl)
-    .replace("{{CONTENT}}", content);
+  // noindex pages (the 404) get no canonical: it would point search
+  // engines at a URL that doesn't exist
+  const shellForPage = shell.replace(
+    /<link rel="canonical" href="\{\{CANONICAL\}\}">\n/,
+    page.noindex ? "" : `<link rel="canonical" href="{{CANONICAL}}">\n`
+  );
+
+  // Fill every occurrence of each placeholder ({{TITLE}} and {{DESC}}
+  // appear twice: the <title>/description tags and the og: tags). One
+  // pass with a function, so inserted text is never re-scanned and "$"
+  // in content can't be read as a replacement pattern.
+  const vars = {
+    TITLE: escapeAttr(page.title),
+    DESC: escapeAttr(page.description),
+    CANONICAL: canonical,
+    ROBOTS: page.noindex ? "noindex, nofollow" : "index, follow",
+    SCHEMA: page.schema || "",
+    GA_ID,
+    GSC_VERIFICATION: gscTag,
+    HEADER: renderHeader(page.active),
+    FOOTER: footerTpl,
+    CONTENT: content,
+  };
+  const html = shellForPage.replace(/\{\{([A-Z_]+)\}\}/g, (m, key) =>
+    key in vars ? vars[key] : m
+  );
+
+  const leftover = html.match(/\{\{[A-Za-z_:]+\}\}/);
+  if (leftover) {
+    console.error(`  UNFILLED placeholder ${leftover[0]} in ${page.out}`);
+    process.exitCode = 1;
+  }
 
   const outPath = path.join(PUBLIC, page.out);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
