@@ -214,6 +214,28 @@ On a platform, attach a **persistent volume at `/data`**: these hosts
 wipe the app's own filesystem on every redeploy, which would delete all
 captured leads.
 
+## Security
+
+Built into `server.js`:
+
+- `/admin` has no default password in production, and each IP is locked
+  out for a minute after 10 failed logins. Admin responses are sent
+  `no-store` / `noindex`.
+- Content-Security-Policy (no inline or third-party scripts except Google
+  Analytics), HSTS in production, clickjacking and MIME-sniffing headers.
+- Lead forms: JSON-only (so other sites can't post into them), 16 KB body
+  limit, per-field length caps, unknown fields dropped, 10 submissions per
+  IP per minute. `X-Forwarded-For` is only trusted with
+  `TEKRIO_TRUST_PROXY=true`, and then only its last (proxy-added) entry.
+- `leads.json` is written atomically with owner-only permissions (0600),
+  and the server refuses to overwrite it if it's ever corrupted, rather
+  than losing earlier leads.
+- Static files can't be read outside `public/`; slow clients time out
+  after 15 s (headers) / 30 s (request).
+
+Also keep the Node runtime patched (`node:20-alpine` in the Dockerfile
+picks up fixes on rebuild) and serve the site only over HTTPS.
+
 ## Turning on Analytics & Search Console
 
 1. Create a GA4 property for `www.tekrio.in` and set its Measurement ID
