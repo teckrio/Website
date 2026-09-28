@@ -128,8 +128,9 @@ tekrio/
 ```
 
 Edit content in `content/pages/` or styles in `public/css/style.css`,
-then run `npm run build` (only needed after editing `content/` or
-`scripts/`; CSS/JS edits under `public/` take effect immediately).
+then run `npm run build` (also after editing CSS/JS under `public/`:
+the build stamps each CSS/JS link with a version code so browsers pick
+up the new file instead of a cached one).
 
 ## Running it
 

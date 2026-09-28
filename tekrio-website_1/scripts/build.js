@@ -39,6 +39,23 @@ function renderHeader(activeKey) {
   );
 }
 
+// Cache busting: stamp CSS/JS links with a short hash of the file's
+// contents (e.g. /css/style.css?v=3f9a1c2b), so browsers fetch the new
+// file as soon as it changes instead of using a cached copy for an hour.
+const crypto = require("crypto");
+const assetVersion = {};
+function versioned(html) {
+  return html.replace(/(["'])(\/(?:css|js)\/[\w.-]+\.(?:css|js))\1/g, (m, q, url) => {
+    if (!(url in assetVersion)) {
+      const file = path.join(PUBLIC, url);
+      assetVersion[url] = fs.existsSync(file)
+        ? crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex").slice(0, 8)
+        : "";
+    }
+    return assetVersion[url] ? `${q}${url}?v=${assetVersion[url]}${q}` : m;
+  });
+}
+
 let builtCount = 0;
 
 for (const page of pages) {
@@ -71,7 +88,7 @@ for (const page of pages) {
 
   const outPath = path.join(PUBLIC, page.out);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
-  fs.writeFileSync(outPath, html);
+  fs.writeFileSync(outPath, versioned(html));
   builtCount++;
 }
 
