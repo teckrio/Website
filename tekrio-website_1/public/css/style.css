@@ -660,6 +660,14 @@ section { padding: 88px 0; }
 .sell-done h2 { margin: 14px 0 10px; }
 .next-list { padding-left: 1.2em; color: var(--slate); }
 .next-list li { margin-bottom: 10px; }
+.price-note {
+  border-left: 3px solid var(--gold);
+  background: var(--gold-light);
+  color: var(--ink);
+  padding: 10px 14px;
+  border-radius: 0 var(--radius-s) var(--radius-s) 0;
+  font-size: 0.92rem;
+}
 .eyebrow-stamp.is-light { color: var(--verified); border-color: var(--verified); }
 
 /* utility */
