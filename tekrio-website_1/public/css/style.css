@@ -134,8 +134,9 @@ section { padding: 88px 0; }
 }
 .brand {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  flex-direction: column; /* tagline sits under the logo */
+  align-items: flex-start;
+  gap: 3px;
   text-decoration: none;
   color: var(--paper);
   flex-shrink: 0;
@@ -146,19 +147,14 @@ section { padding: 88px 0; }
   font-weight: 600;
   letter-spacing: 0.01em;
   color: var(--paper);
+  line-height: 1;
 }
 .brand-tag {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   color: var(--slate-on-dark);
-  letter-spacing: 0.02em;
-  display: none;
-}
-@media (min-width: 900px) {
-  .brand-tag { display: inline; }
-}
-/* the full desktop nav needs the room; the tagline stays in the footer */
-@media (min-width: 1280px) {
-  .brand-tag { display: none; }
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 .main-nav {
   display: none;
