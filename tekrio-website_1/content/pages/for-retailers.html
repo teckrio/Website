@@ -36,12 +36,19 @@
       <span class="kicker">Why partner as a retailer</span>
       <h2>You stay the trusted bridge &mdash; TEKRIO does the rest</h2>
       <p>Your customers already trust you with their pre-owned device. TEKRIO doesn't change that relationship. It gives you offers from verified buyers on the TEKRIO marketplace, instead of the one or two buyers you know personally.</p>
-      <p>Once registered, you'll get access to the TEKRIO retailer app <span class="pending-badge">App access pending</span> to inspect and list devices, track buyer offers and see your commission after every transaction.</p>
+      <p>Day-to-day work happens in the TEKRIO Retailer app: inspect and list devices, track buyer offers and see your commission after every transaction. This page is where you register for it.</p>
+      <h3 class="reg-title">How registration works</h3>
+      <ol class="next-list">
+        <li><strong>Register</strong> &mdash; fill in the form with your store details.</li>
+        <li><strong>Verification</strong> &mdash; our onboarding team calls you to verify your store and collect bank details for commission payouts.</li>
+        <li><strong>App login</strong> &mdash; we email your login for the TEKRIO Retailer app to the address you give us.</li>
+        <li><strong>Start listing</strong> &mdash; sign in to the app and list your first device.</li>
+      </ol>
     </div>
     <div>
       <div class="form-card" id="register">
         <h2>Register your store</h2>
-        <p class="form-sub">Tell us about your store. Our onboarding team will contact you to complete verification and app setup.</p>
+        <p class="form-sub">Tell us about your store. Your TEKRIO Retailer app login will be sent to your email once you're verified.</p>
         <form data-lead-form="retailer" novalidate>
           <input type="text" name="_hp" class="visually-hidden" tabindex="-1" autocomplete="off">
           <div class="field" data-field data-rule="text">
@@ -54,6 +61,12 @@
             <input id="r-owner" name="ownerName" type="text" required autocomplete="name">
             <p class="field-error"></p>
           </div>
+          <div class="field" data-field data-rule="email">
+            <label for="r-email">Email</label>
+            <input id="r-email" name="email" type="email" required autocomplete="email">
+            <p class="field-hint">Your app login will be sent here.</p>
+            <p class="field-error"></p>
+          </div>
           <div class="field" data-field data-rule="mobile">
             <label for="r-mobile">Mobile number</label>
             <input id="r-mobile" name="mobile" type="tel" inputmode="numeric" maxlength="10" required autocomplete="tel">
@@ -62,6 +75,11 @@
           <div class="field" data-field data-rule="text">
             <label for="r-city">City</label>
             <input id="r-city" name="city" type="text" required autocomplete="address-level2">
+            <p class="field-error"></p>
+          </div>
+          <div class="field" data-field data-rule="text">
+            <label for="r-address">Store address</label>
+            <input id="r-address" name="address" type="text" required autocomplete="street-address">
             <p class="field-error"></p>
           </div>
           <div class="field" data-field data-rule="gst">

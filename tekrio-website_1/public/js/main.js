@@ -25,6 +25,23 @@
     });
   }
 
+  // ---------- Register dropdown ----------
+  // close it on an outside click, on Escape, or after choosing an option
+  document.querySelectorAll(".reg-menu").forEach(function (menu) {
+    document.addEventListener("click", function (e) {
+      if (menu.open && !menu.contains(e.target)) menu.open = false;
+    });
+    menu.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && menu.open) {
+        menu.open = false;
+        menu.querySelector("summary").focus();
+      }
+    });
+    menu.querySelectorAll("a").forEach(function (a) {
+      a.addEventListener("click", function () { menu.open = false; });
+    });
+  });
+
   // ---------- footer year ----------
   var yearEl = document.getElementById("year");
   if (yearEl) yearEl.textContent = new Date().getFullYear();

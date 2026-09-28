@@ -56,12 +56,12 @@ As requested, everything that depends on the **TEKRIO mobile app's own
 backend/API** (which doesn't exist yet) is stubbed cleanly rather than
 faked:
 
-1. **Retailer/Buyer OTP login.** `/portal/retailer-login` and
-   `/portal/buyer-login` currently show an honest holding page
-   ("login is on its way") instead of a broken or fake login form, with a
-   link to the registration form instead. Once the app exposes an OTP
-   login/redirect URL, replace the two routes in `server.js`
-   (`renderPortalPage`) with a redirect to that URL.
+1. **Retailer and Buyer accounts.** Retailers and buyers use the separate
+   TEKRIO apps; this website only registers them. The backend only lets an
+   Admin create accounts (`POST /managers`, `POST /vendors`), so the TEKRIO
+   team verifies each registration from `/admin`, creates the account and
+   emails the app login. The old `/portal/*-login` URLs redirect to the
+   registration forms.
 2. **Pushing leads into the app/admin backend automatically.** Every lead
    is saved locally to `data/leads.json` and shown in `/admin` today.
    `server.js` already has a `forwardToAppApi()` hook that will POST every
@@ -251,8 +251,8 @@ picks up fixes on rebuild) and serve the site only over HTTPS.
 | Form | Fields |
 |---|---|
 | Sell (`/sell.html`) | Platform, Brand, Model, Storage, RAM, Screen/Body condition, Device age, Battery health, Box/Bill/Charger, Name, Mobile, City, Pincode |
-| Retailer (`/for-retailers.html`) | Store Name, Owner Name, Mobile, City, GSTIN (optional) |
-| Buyer (`/for-buyers.html`) | Business Name, Mobile, City, GST/PAN |
+| Retailer (`/for-retailers.html`) | Store Name, Owner Name, Email, Mobile, City, Store Address, GSTIN (optional) |
+| Buyer (`/for-buyers.html`) | Business Name, Contact Person, Email, Mobile, City, GST/PAN |
 | Partner (`/partner.html`) | Name, Company, Mobile, City, Partnership Type, Message |
 | Contact (`/contact.html`) | Name, Email, Mobile, Topic, Message |
 

@@ -155,9 +155,13 @@ section { padding: 88px 0; }
 @media (min-width: 900px) {
   .brand-tag { display: inline; }
 }
+/* make room for the full nav on laptop widths */
+@media (min-width: 1120px) and (max-width: 1399px) {
+  .brand-tag { display: none; }
+}
 .main-nav {
   display: none;
-  gap: 28px;
+  gap: 22px;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -169,12 +173,13 @@ section { padding: 88px 0; }
   font-weight: 500;
   padding: 6px 0;
   border-bottom: 2px solid transparent;
+  white-space: nowrap;
 }
 .main-nav a:hover, .main-nav a.active {
   color: var(--paper);
   border-bottom-color: var(--gold);
 }
-@media (min-width: 1080px) {
+@media (min-width: 1120px) {
   .main-nav { display: flex; }
 }
 .header-actions {
@@ -182,17 +187,36 @@ section { padding: 88px 0; }
   align-items: center;
   gap: 10px;
 }
-@media (min-width: 1080px) {
+@media (min-width: 1120px) {
   .header-actions { display: flex; }
 }
-.header-actions .btn { padding: 9px 16px; font-size: 0.88rem; }
-.login-link {
-  font-size: 0.86rem;
-  color: var(--slate-on-dark);
-  text-decoration: none;
-  padding: 8px 6px;
+.header-actions .btn { padding: 9px 16px; font-size: 0.88rem; white-space: nowrap; }
+
+/* Register dropdown: retailer or buyer */
+.reg-menu { position: relative; }
+.reg-menu summary { list-style: none; cursor: pointer; gap: 8px; }
+.reg-menu summary::-webkit-details-marker { display: none; }
+.reg-menu summary::after {
+  content: ""; width: 7px; height: 7px; margin-top: -3px;
+  border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+  transform: rotate(45deg); transition: transform 150ms ease;
 }
-.login-link:hover { color: var(--paper); }
+.reg-menu[open] summary::after { transform: rotate(-135deg); margin-top: 3px; }
+.reg-menu-list {
+  position: absolute; right: 0; top: calc(100% + 8px);
+  min-width: 190px;
+  display: flex; flex-direction: column;
+  background: var(--ink-2);
+  border: 1px solid var(--line-dark);
+  border-radius: var(--radius-m);
+  padding: 6px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+}
+.reg-menu-list a {
+  color: var(--paper); text-decoration: none; font-size: 0.92rem;
+  padding: 10px 12px; border-radius: var(--radius-s);
+}
+.reg-menu-list a:hover, .reg-menu-list a:focus-visible { background: rgba(244,240,228,0.08); }
 .nav-toggle {
   display: inline-flex;
   background: none;
@@ -201,7 +225,7 @@ section { padding: 88px 0; }
   padding: 8px 10px;
   color: var(--paper);
 }
-@media (min-width: 1080px) {
+@media (min-width: 1120px) {
   .nav-toggle { display: none; }
 }
 .mobile-panel {
@@ -220,7 +244,9 @@ section { padding: 88px 0; }
   font-size: 1rem;
 }
 .mobile-panel .mobile-cta { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
-@media (min-width: 1080px) {
+/* keep the button's own dark text; ".mobile-panel a" would make it light on gold */
+.mobile-panel .btn-gold { color: var(--ink); border-bottom: 0; }
+@media (min-width: 1120px) {
   .mobile-panel { display: none !important; }
 }
 
@@ -660,6 +686,8 @@ section { padding: 88px 0; }
 .sell-done h2 { margin: 14px 0 10px; }
 .next-list { padding-left: 1.2em; color: var(--slate); }
 .next-list li { margin-bottom: 10px; }
+.reg-title { font-family: var(--font-body); font-size: 1rem; font-weight: 700; margin: 24px 0 10px; }
+.field-hint { font-size: 0.8rem; color: var(--slate); margin: 6px 0 0; }
 .price-note {
   border-left: 3px solid var(--gold);
   background: var(--gold-light);
