@@ -1,0 +1,8 @@
+# captured leads contain customers' personal data - never commit them
+data/
+node_modules/
+.env
+.env.*
+!.env.example
+.DS_Store
+npm-debug.log*

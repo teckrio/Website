@@ -6,7 +6,7 @@ const ORG_SCHEMA = `<script type="application/ld+json">
   "@type": "Organization",
   "name": "TEKRIO",
   "url": "https://www.tekrio.in",
-  "logo": "https://www.tekrio.in/images/logo.svg",
+  "logo": "https://www.tekrio.in/images/logo.png",
   "parentOrganization": {
     "@type": "Organization",
     "name": "Anabriya Technologies LLP"

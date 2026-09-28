@@ -21,9 +21,9 @@ const { URL } = require("url");
 
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, "public");
-const DATA_DIR = path.join(ROOT, "data");
-const LEADS_FILE = path.join(DATA_DIR, "leads.json");
 const CONFIG = require("./config.js");
+const DATA_DIR = CONFIG.DATA_DIR ? path.resolve(CONFIG.DATA_DIR) : path.join(ROOT, "data");
+const LEADS_FILE = path.join(DATA_DIR, "leads.json");
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(LEADS_FILE)) fs.writeFileSync(LEADS_FILE, "[]");
@@ -252,6 +252,7 @@ async function getCatalog() {
 // admin basic auth (credentials via config.js / env — see README)
 // ---------------------------------------------------------------------
 function checkBasicAuth(req) {
+  if (!CONFIG.ADMIN_PASSWORD) return false; // admin disabled, never match ""
   const header = req.headers["authorization"] || "";
   const [scheme, encoded] = header.split(" ");
   if (scheme !== "Basic" || !encoded) return false;
@@ -271,6 +272,10 @@ function timingSafeEqual(a, b) {
   return crypto.timingSafeEqual(bufA, bufB);
 }
 function requireAuth(res) {
+  if (!CONFIG.ADMIN_PASSWORD) {
+    res.writeHead(503, { "Content-Type": "text/plain" });
+    return res.end("Admin dashboard is disabled. Set TEKRIO_ADMIN_PASSWORD to enable it.");
+  }
   res.writeHead(401, {
     "WWW-Authenticate": 'Basic realm="TEKRIO Admin"',
     "Content-Type": "text/plain",
@@ -301,7 +306,13 @@ function serveStatic(req, res, urlPath) {
       return;
     }
     const ext = path.extname(filePath).toLowerCase();
-    res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream" });
+    // assets aren't fingerprinted, so keep caching short enough that a
+    // redeploy shows up within the hour
+    const cache = ext === ".html" ? "no-cache" : "public, max-age=3600";
+    res.writeHead(200, {
+      "Content-Type": MIME[ext] || "application/octet-stream",
+      "Cache-Control": cache,
+    });
     res.end(content);
   });
 }
@@ -436,12 +447,23 @@ td:first-child { white-space:nowrap; color:var(--slate); font-size:0.82rem; }
 // ---------------------------------------------------------------------
 // request handler
 // ---------------------------------------------------------------------
+const SECURITY_HEADERS = {
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "SAMEORIGIN",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+  ...(CONFIG.IS_PRODUCTION
+    ? { "Strict-Transport-Security": "max-age=31536000; includeSubDomains" }
+    : {}),
+};
+
 const server = http.createServer(async (req, res) => {
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) res.setHeader(name, value);
   try {
     const parsed = new URL(req.url, `http://${req.headers.host}`);
     const pathname = parsed.pathname;
-    const ip =
-      req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown";
+    const forwarded = CONFIG.TRUST_PROXY && req.headers["x-forwarded-for"];
+    const ip = forwarded || req.socket.remoteAddress || "unknown";
 
     // ---- lead capture API ----
     if (pathname.startsWith("/api/leads/") && req.method === "POST") {
@@ -551,5 +573,20 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`TEKRIO server running at http://localhost:${PORT}`);
-  console.log(`Admin dashboard: http://localhost:${PORT}/admin (user: ${CONFIG.ADMIN_USER})`);
+  console.log(`Leads file: ${LEADS_FILE}`);
+  if (CONFIG.ADMIN_PASSWORD) {
+    console.log(`Admin dashboard: http://localhost:${PORT}/admin (user: ${CONFIG.ADMIN_USER})`);
+  } else {
+    console.warn("Admin dashboard disabled: set TEKRIO_ADMIN_PASSWORD to enable /admin.");
+  }
 });
+
+// let the process manager / platform stop us cleanly (finish in-flight
+// requests, including a pending leads.json write)
+function shutdown(signal) {
+  console.log(`${signal} received, shutting down.`);
+  server.close(() => writeChain.finally(() => process.exit(0)));
+  setTimeout(() => process.exit(1), 10000).unref();
+}
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));

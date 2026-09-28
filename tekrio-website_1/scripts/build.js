@@ -17,6 +17,18 @@ const SITE_URL = "https://www.tekrio.in";
 
 const pages = require("./pages.config.js");
 
+// Google Analytics / Search Console IDs, supplied at build time so they
+// never need hand-editing in HTML. Unset = analytics stays off.
+const GA_ID = process.env.TEKRIO_GA_ID || "";
+const GSC_TOKEN = process.env.TEKRIO_GSC_VERIFICATION || "";
+if (GA_ID && !/^G-[A-Z0-9]+$/.test(GA_ID)) {
+  console.error(`TEKRIO_GA_ID "${GA_ID}" doesn't look like a GA4 ID (G-XXXXXXX).`);
+  process.exit(1);
+}
+const gscTag = GSC_TOKEN
+  ? `<meta name="google-site-verification" content="${GSC_TOKEN.replace(/[^A-Za-z0-9_-]/g, "")}">`
+  : "";
+
 const shell = fs.readFileSync(path.join(TEMPLATES, "_shell.html"), "utf8");
 const headerTpl = fs.readFileSync(path.join(TEMPLATES, "_header.html"), "utf8");
 const footerTpl = fs.readFileSync(path.join(TEMPLATES, "_footer.html"), "utf8");
@@ -45,6 +57,8 @@ for (const page of pages) {
     .replace(/\{\{CANONICAL\}\}/g, canonical)
     .replace("{{ROBOTS}}", page.noindex ? "noindex, nofollow" : "index, follow")
     .replace("{{SCHEMA}}", page.schema || "")
+    .replace("{{GA_ID}}", GA_ID)
+    .replace("{{GSC_VERIFICATION}}", gscTag)
     .replace("{{HEADER}}", renderHeader(page.active))
     .replace("{{FOOTER}}", footerTpl)
     .replace("{{CONTENT}}", content);
@@ -74,3 +88,4 @@ fs.writeFileSync(
 );
 
 console.log(`Built ${builtCount}/${pages.length} pages -> /public`);
+console.log(GA_ID ? `Google Analytics: ${GA_ID}` : "Google Analytics: off (set TEKRIO_GA_ID to enable)");

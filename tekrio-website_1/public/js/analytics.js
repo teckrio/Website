@@ -1,13 +1,12 @@
 /**
  * Google Analytics 4 loader.
- * PENDING: set the real Measurement ID on the <head> script tag
- * (window.__TEKRIO_GA_ID) once the GA4 property + Search Console
- * are created for www.tekrio.in. Until then this file loads nothing,
- * so the site never calls out to an invalid property.
+ * The Measurement ID is injected into window.__TEKRIO_GA_ID at build time
+ * from the TEKRIO_GA_ID env var. Without it this file loads nothing, so the
+ * site never calls out to an invalid property.
  */
 (function () {
   var id = window.__TEKRIO_GA_ID;
-  if (!id || id.indexOf("XXXX") !== -1) return;
+  if (!/^G-[A-Z0-9]+$/.test(id || "")) return;
 
   var s = document.createElement("script");
   s.async = true;
