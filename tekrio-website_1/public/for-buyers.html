@@ -38,6 +38,7 @@
       <span class="brand-tag">Connect. Compare. Close.</span>
     </a>
     <nav class="main-nav" aria-label="Primary">
+      <a href="/" class="">Home</a>
       <a href="/how-it-works.html" class="">How It Works</a>
       <a href="/for-customers.html" class="">For Customers</a>
       <a href="/for-retailers.html" class="">For Retailers</a>
@@ -47,13 +48,8 @@
     </nav>
     <div class="header-actions">
       <a href="/sell.html" class="btn btn-gold">Sell Your Device</a>
-      <details class="reg-menu">
-        <summary class="btn btn-outline-light">Register</summary>
-        <div class="reg-menu-list">
-          <a href="/for-retailers.html#register">As a retailer</a>
-          <a href="/for-buyers.html#join">As a buyer</a>
-        </div>
-      </details>
+      <a href="/portal/retailer-login" class="login-link">Retailer Login</a>
+      <a href="/portal/buyer-login" class="login-link">Buyer Login</a>
     </div>
     <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mobilePanel">
       <span class="visually-hidden">Menu</span>
@@ -70,8 +66,8 @@
     <a href="/for-buyers.html">For Buyers</a>
     <a href="/partner.html">Partner With Us</a>
     <a href="/contact.html">Contact</a>
-    <a href="/for-retailers.html#register">Register as Retailer</a>
-    <a href="/for-buyers.html#join">Register as Buyer</a>
+    <a href="/portal/retailer-login">Retailer Login</a>
+    <a href="/portal/buyer-login">Buyer Login</a>
     <div class="mobile-cta">
       <a href="/sell.html" class="btn btn-gold btn-block">Sell Your Device</a>
     </div>
@@ -116,14 +112,7 @@
     <div>
       <span class="kicker">How sourcing works on TEKRIO</span>
       <h2>From listing to inventory, without the guesswork</h2>
-      <p>Partnered stores inspect and list devices with condition details, photos and IMEI. You see them in the marketplace feed of the TEKRIO Buyer app and make your offer &mdash; when the customer chooses your offer, the device is yours.</p>
-      <h3 class="reg-title">How registration works</h3>
-      <ol class="next-list">
-        <li><strong>Register</strong> &mdash; fill in the form with your business details.</li>
-        <li><strong>Verification</strong> &mdash; our team checks your GST or PAN and business details.</li>
-        <li><strong>App login</strong> &mdash; we email your login for the TEKRIO Buyer app to the address you give us.</li>
-        <li><strong>Start buying</strong> &mdash; sign in and make offers from your marketplace feed.</li>
-      </ol>
+      <p>Partnered stores inspect and list devices with condition details, photos and IMEI. You see them in your marketplace feed <span class="pending-badge">Buyer app access pending</span> and make your offer &mdash; when the customer chooses your offer, the device is yours.</p>
       <div class="two-col" style="margin-top:28px;gap:20px;">
         <div class="stat"><span class="num">Marketplace</span><span class="label">Feed of store-listed devices</span></div>
         <div class="stat"><span class="num">IMEI</span><span class="label">&amp; photo-documented listings</span></div>
@@ -132,23 +121,12 @@
     <div>
       <div class="form-card" id="join">
         <h2>Join as a buyer</h2>
-        <p class="form-sub">Tell us about your business. Your TEKRIO Buyer app login will be sent to your email once you're verified.</p>
+        <p class="form-sub">Tell us about your business. Our team will verify your details and set up buyer access.</p>
         <form data-lead-form="vendor" novalidate>
           <input type="text" name="_hp" class="visually-hidden" tabindex="-1" autocomplete="off">
           <div class="field" data-field data-rule="text">
             <label for="v-business">Business name</label>
             <input id="v-business" name="businessName" type="text" required>
-            <p class="field-error"></p>
-          </div>
-          <div class="field" data-field data-rule="text">
-            <label for="v-contact">Contact person</label>
-            <input id="v-contact" name="contactName" type="text" required autocomplete="name">
-            <p class="field-error"></p>
-          </div>
-          <div class="field" data-field data-rule="email">
-            <label for="v-email">Email</label>
-            <input id="v-email" name="email" type="email" required autocomplete="email">
-            <p class="field-hint">Your app login will be sent here.</p>
             <p class="field-error"></p>
           </div>
           <div class="field" data-field data-rule="mobile">
@@ -166,7 +144,7 @@
             <input id="v-gstpan" name="gstOrPan" type="text" required placeholder="GSTIN or PAN number">
             <p class="field-error"></p>
           </div>
-          <button type="submit" class="btn btn-gold btn-block">Register as Buyer</button>
+          <button type="submit" class="btn btn-gold btn-block">Join as Buyer</button>
           <p class="form-status" role="status"></p>
           <p class="form-note">By submitting, you agree to our <a href="/privacy-terms.html">Privacy Policy</a> and <a href="/privacy-terms.html#terms">Terms &amp; Conditions</a>.</p>
         </form>

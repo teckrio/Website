@@ -6,10 +6,12 @@
  * JSON store, and exposes a minimal password-protected admin view of
  * captured leads.
  *
- * Retailers and buyers use the separate TEKRIO apps; this site registers
- * them. Registrations are saved to data/leads.json for the TEKRIO team,
- * who create the app accounts, and can also be forwarded to the app
- * backend through a webhook (see README.md).
+ * PENDING (documented in README.md): TEKRIO app/API connection for
+ * OTP retailer/vendor login and automatic push of leads into the app's
+ * own backend. Until that API exists, /portal/* routes show an
+ * explanatory holding page instead of a broken login, and leads are
+ * queued in data/leads.json (plus a webhook hook) ready to sync once
+ * the API is available.
  */
 const http = require("http");
 const fs = require("fs");
@@ -136,14 +138,12 @@ const SCHEMAS = {
     required: ["name", "mobile", "city", "device"],
     optional: [],
   },
-  // retailer/vendor are registrations for the separate TEKRIO apps; the
-  // TEKRIO team creates the app account, and the apps log in by email
   retailer: {
-    required: ["storeName", "ownerName", "email", "mobile", "city", "address"],
+    required: ["storeName", "ownerName", "mobile", "city"],
     optional: ["gst"],
   },
   vendor: {
-    required: ["businessName", "contactName", "email", "mobile", "city", "gstOrPan"],
+    required: ["businessName", "mobile", "city", "gstOrPan"],
     optional: [],
   },
   sell: {
@@ -162,15 +162,6 @@ const SCHEMAS = {
     optional: [],
   },
 };
-
-const SUCCESS_MESSAGES = {
-  retailer: (ref) =>
-    `Registration received (ref. ${ref}). Our onboarding team will call you to verify your store, then email your TEKRIO Retailer app login.`,
-  vendor: (ref) =>
-    `Registration received (ref. ${ref}). Our team will verify your business, then email your TEKRIO Buyer app login.`,
-};
-const DEFAULT_SUCCESS = () => "Thanks! Our team will reach out shortly.";
-for (const type of Object.keys(SCHEMAS)) SUCCESS_MESSAGES[type] ||= DEFAULT_SUCCESS;
 
 function isValidMobile(v) {
   return /^[6-9]\d{9}$/.test(String(v || "").trim());
@@ -484,6 +475,33 @@ function escapeHtml(str) {
 }
 
 // ---------------------------------------------------------------------
+// portal placeholder page (retailer/vendor OTP login — pending API)
+// ---------------------------------------------------------------------
+function renderPortalPage(kind) {
+  const label = kind === "retailer" ? "Retailer" : "Buyer";
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${label} Login | TEKRIO</title>
+<link rel="icon" href="/images/favicon.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css"></head>
+<body>
+<div class="container" style="max-width:520px;padding-top:80px;padding-bottom:80px;">
+  <a href="/" class="brand" style="color:var(--ink);margin-bottom:28px;display:inline-flex;">
+    <span class="brand-mark" style="color:var(--ink);">TEKRIO</span>
+  </a>
+  <div class="form-card">
+    <span class="pending-badge">Pending app/API connection</span>
+    <h2 style="margin-top:14px;">${label} login is on its way</h2>
+    <p class="form-sub">OTP login for ${label.toLowerCase()}s will redirect here to the TEKRIO ${label} app once that connection is live. Until the app/API integration is complete, please use the ${label.toLowerCase()} registration form and our onboarding team will reach out with next steps and early access.</p>
+    <a href="/for-${kind}s.html#${kind === "retailer" ? "register" : "join"}" class="btn btn-gold btn-block">Go to ${label} Registration</a>
+    <p class="form-note" style="margin-top:20px;">Already registered and need help? Email <a href="mailto:support@tekrio.in">support@tekrio.in</a>.</p>
+  </div>
+</div>
+</body></html>`;
+}
+
+// ---------------------------------------------------------------------
 // admin dashboard (basic-auth protected, read-only view of leads.json)
 // ---------------------------------------------------------------------
 function renderAdminPage(leads) {
@@ -618,10 +636,9 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 500, { message: "Could not save your submission. Please try again." });
       }
       forwardToAppApi(record); // no-op until APP_API_WEBHOOK_URL is configured
-      const reference = record.id.slice(0, 8).toUpperCase();
       return sendJson(res, 200, {
-        message: SUCCESS_MESSAGES[type](reference),
-        reference,
+        message: "Thanks! Our team will reach out shortly.",
+        reference: record.id.slice(0, 8).toUpperCase(),
       });
     }
 
@@ -660,13 +677,22 @@ const server = http.createServer(async (req, res) => {
     }
 
     // ---- portal placeholders (pending app/API + OTP login) ----
-    // ---- moved pages; keep old links working ----
-    // Retailers and buyers sign in inside their own TEKRIO apps, so the old
-    // website login URLs now lead to the registration forms.
+    if (pathname.startsWith("/portal/")) {
+      // placeholder pages: keep them out of search results
+      res.setHeader("X-Robots-Tag", "noindex, nofollow");
+    }
+    if (pathname === "/portal/retailer-login") {
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+      return res.end(renderPortalPage("retailer"));
+    }
+    if (pathname === "/portal/buyer-login") {
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+      return res.end(renderPortalPage("buyer"));
+    }
+
+    // ---- renamed pages (Vendor -> Buyer); keep old links working ----
     const MOVED = {
-      "/portal/retailer-login": "/for-retailers.html#register",
-      "/portal/buyer-login": "/for-buyers.html#join",
-      "/portal/vendor-login": "/for-buyers.html#join",
+      "/portal/vendor-login": "/portal/buyer-login",
       "/for-vendors.html": "/for-buyers.html",
       "/for-vendors": "/for-buyers.html",
     };
