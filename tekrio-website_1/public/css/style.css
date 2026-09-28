@@ -127,7 +127,7 @@ section { padding: 88px 0; }
   align-items: center;
   justify-content: space-between;
   padding: 16px 24px;
-  max-width: var(--container);
+  max-width: 1320px;
   margin: 0 auto;
   gap: 24px;
 }
@@ -155,44 +155,45 @@ section { padding: 88px 0; }
 @media (min-width: 900px) {
   .brand-tag { display: inline; }
 }
+/* the full desktop nav needs the room; the tagline stays in the footer */
+@media (min-width: 1240px) {
+  .brand-tag { display: none; }
+}
 .main-nav {
   display: none;
-  gap: 28px;
+  gap: 18px;
   list-style: none;
   margin: 0;
   padding: 0;
 }
-.main-nav a {
+/* nav links and header links share one style */
+.main-nav a, .login-link {
   text-decoration: none;
   color: var(--slate-on-dark);
-  font-size: 0.94rem;
+  font-size: 0.9rem;
   font-weight: 500;
   padding: 6px 0;
   border-bottom: 2px solid transparent;
+  white-space: nowrap;
 }
-.main-nav a:hover, .main-nav a.active {
+.main-nav a:hover, .main-nav a.active, .login-link:hover, .login-link.active {
   color: var(--paper);
   border-bottom-color: var(--gold);
 }
-@media (min-width: 1080px) {
+@media (min-width: 1240px) {
   .main-nav { display: flex; }
 }
 .header-actions {
   display: none;
   align-items: center;
-  gap: 10px;
+  gap: 18px;
+  padding-left: 20px;
+  border-left: 1px solid var(--line-dark);
 }
-@media (min-width: 1080px) {
+@media (min-width: 1240px) {
   .header-actions { display: flex; }
 }
 .header-actions .btn { padding: 9px 16px; font-size: 0.88rem; }
-.login-link {
-  font-size: 0.86rem;
-  color: var(--slate-on-dark);
-  text-decoration: none;
-  padding: 8px 6px;
-}
-.login-link:hover { color: var(--paper); }
 .nav-toggle {
   display: inline-flex;
   background: none;
@@ -201,7 +202,7 @@ section { padding: 88px 0; }
   padding: 8px 10px;
   color: var(--paper);
 }
-@media (min-width: 1080px) {
+@media (min-width: 1240px) {
   .nav-toggle { display: none; }
 }
 .mobile-panel {
@@ -220,7 +221,7 @@ section { padding: 88px 0; }
   font-size: 1rem;
 }
 .mobile-panel .mobile-cta { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
-@media (min-width: 1080px) {
+@media (min-width: 1240px) {
   .mobile-panel { display: none !important; }
 }
 
