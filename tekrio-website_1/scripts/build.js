@@ -17,6 +17,18 @@ const SITE_URL = "https://www.tekrio.in";
 
 const pages = require("./pages.config.js");
 
+// Google Analytics / Search Console IDs, supplied at build time so they
+// never need hand-editing in HTML. Unset = analytics stays off.
+const GA_ID = process.env.TEKRIO_GA_ID || "";
+const GSC_TOKEN = process.env.TEKRIO_GSC_VERIFICATION || "";
+if (GA_ID && !/^G-[A-Z0-9]+$/.test(GA_ID)) {
+  console.error(`TEKRIO_GA_ID "${GA_ID}" doesn't look like a GA4 ID (G-XXXXXXX).`);
+  process.exit(1);
+}
+const gscTag = GSC_TOKEN
+  ? `<meta name="google-site-verification" content="${GSC_TOKEN.replace(/[^A-Za-z0-9_-]/g, "")}">`
+  : "";
+
 const shell = fs.readFileSync(path.join(TEMPLATES, "_shell.html"), "utf8");
 const headerTpl = fs.readFileSync(path.join(TEMPLATES, "_header.html"), "utf8");
 const footerTpl = fs.readFileSync(path.join(TEMPLATES, "_footer.html"), "utf8");
@@ -25,6 +37,31 @@ function renderHeader(activeKey) {
   return headerTpl.replace(/\{\{active:([a-z]+)\}\}/g, (_, key) =>
     key === activeKey ? "active" : ""
   );
+}
+
+// Cache busting: stamp CSS/JS links with a short hash of the file's
+// contents (e.g. /css/style.css?v=3f9a1c2b), so browsers fetch the new
+// file as soon as it changes instead of using a cached copy for an hour.
+const crypto = require("crypto");
+const assetVersion = {};
+function versioned(html) {
+  return html.replace(/(["'])(\/(?:css|js)\/[\w.-]+\.(?:css|js))\1/g, (m, q, url) => {
+    if (!(url in assetVersion)) {
+      const file = path.join(PUBLIC, url);
+      assetVersion[url] = fs.existsSync(file)
+        ? crypto.createHash("sha256").update(fs.readFileSync(file)).digest("hex").slice(0, 8)
+        : "";
+    }
+    return assetVersion[url] ? `${q}${url}?v=${assetVersion[url]}${q}` : m;
+  });
+}
+
+function escapeAttr(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 let builtCount = 0;
@@ -39,33 +76,58 @@ for (const page of pages) {
   const content = fs.readFileSync(contentPath, "utf8");
   const canonical = SITE_URL + (page.out === "index.html" ? "/" : `/${page.out}`);
 
-  let html = shell
-    .replace("{{TITLE}}", page.title)
-    .replace("{{DESC}}", page.description)
-    .replace(/\{\{CANONICAL\}\}/g, canonical)
-    .replace("{{ROBOTS}}", page.noindex ? "noindex, nofollow" : "index, follow")
-    .replace("{{SCHEMA}}", page.schema || "")
-    .replace("{{HEADER}}", renderHeader(page.active))
-    .replace("{{FOOTER}}", footerTpl)
-    .replace("{{CONTENT}}", content);
+  // noindex pages (the 404) get no canonical: it would point search
+  // engines at a URL that doesn't exist
+  const shellForPage = shell.replace(
+    /<link rel="canonical" href="\{\{CANONICAL\}\}">\n/,
+    page.noindex ? "" : `<link rel="canonical" href="{{CANONICAL}}">\n`
+  );
+
+  // Fill every occurrence of each placeholder ({{TITLE}} and {{DESC}}
+  // appear twice: the <title>/description tags and the og: tags). One
+  // pass with a function, so inserted text is never re-scanned and "$"
+  // in content can't be read as a replacement pattern.
+  const vars = {
+    TITLE: escapeAttr(page.title),
+    DESC: escapeAttr(page.description),
+    CANONICAL: canonical,
+    ROBOTS: page.noindex ? "noindex, nofollow" : "index, follow",
+    SCHEMA: page.schema || "",
+    GA_ID,
+    GSC_VERIFICATION: gscTag,
+    HEADER: renderHeader(page.active),
+    FOOTER: footerTpl,
+    CONTENT: content,
+  };
+  const html = shellForPage.replace(/\{\{([A-Z_]+)\}\}/g, (m, key) =>
+    key in vars ? vars[key] : m
+  );
+
+  const leftover = html.match(/\{\{[A-Za-z_:]+\}\}/);
+  if (leftover) {
+    console.error(`  UNFILLED placeholder ${leftover[0]} in ${page.out}`);
+    process.exitCode = 1;
+  }
 
   const outPath = path.join(PUBLIC, page.out);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
-  fs.writeFileSync(outPath, html);
+  fs.writeFileSync(outPath, versioned(html));
   builtCount++;
 }
 
-// sitemap.xml (skip noindex pages such as 404)
+// sitemap.xml (skip noindex pages such as 404). lastmod is each page's
+// content file date, so search engines can see what actually changed.
 const urls = pages
   .filter((p) => !p.noindex)
   .map((p) => {
     const loc = SITE_URL + (p.out === "index.html" ? "/" : `/${p.out}`);
-    return `  <url><loc>${loc}</loc><changefreq>weekly</changefreq></url>`;
+    const lastmod = fs.statSync(path.join(CONTENT, p.file)).mtime.toISOString().slice(0, 10);
+    return `  <url><loc>${loc}</loc><lastmod>${lastmod}</lastmod></url>`;
   })
   .join("\n");
 fs.writeFileSync(
   path.join(PUBLIC, "sitemap.xml"),
-  `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemap.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`
+  `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`
 );
 
 fs.writeFileSync(
@@ -74,3 +136,4 @@ fs.writeFileSync(
 );
 
 console.log(`Built ${builtCount}/${pages.length} pages -> /public`);
+console.log(GA_ID ? `Google Analytics: ${GA_ID}` : "Google Analytics: off (set TEKRIO_GA_ID to enable)");

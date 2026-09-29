@@ -17,16 +17,18 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const zlib = require("zlib");
 const { URL } = require("url");
 
 const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, "public");
-const DATA_DIR = path.join(ROOT, "data");
-const LEADS_FILE = path.join(DATA_DIR, "leads.json");
 const CONFIG = require("./config.js");
+const DATA_DIR = CONFIG.DATA_DIR ? path.resolve(CONFIG.DATA_DIR) : path.join(ROOT, "data");
+const LEADS_FILE = path.join(DATA_DIR, "leads.json");
 
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-if (!fs.existsSync(LEADS_FILE)) fs.writeFileSync(LEADS_FILE, "[]");
+// leads.json holds customers' personal data: owner-only permissions
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
+if (!fs.existsSync(LEADS_FILE)) fs.writeFileSync(LEADS_FILE, "[]", { mode: 0o600 });
 
 const PORT = process.env.PORT || 3000;
 
@@ -46,52 +48,89 @@ const MIME = {
 
 // ---------------------------------------------------------------------
 // tiny in-process write queue so concurrent form submits never clobber
-// each other's write to leads.json
+// each other's write to leads.json. Writes go to a temp file and are
+// renamed into place, so a crash mid-write can't leave a truncated file.
+// If the existing file can't be parsed we refuse to write rather than
+// silently replacing (and losing) every earlier lead.
 // ---------------------------------------------------------------------
 let writeChain = Promise.resolve();
+async function writeLead(record) {
+  const raw = await fs.promises.readFile(LEADS_FILE, "utf8");
+  let list;
+  try {
+    list = JSON.parse(raw || "[]");
+  } catch (e) {
+    throw new Error(`${LEADS_FILE} is not valid JSON; fix or move it aside`);
+  }
+  if (!Array.isArray(list)) throw new Error(`${LEADS_FILE} is not a JSON array`);
+  list.push(record);
+  const tmp = `${LEADS_FILE}.${process.pid}.tmp`;
+  await fs.promises.writeFile(tmp, JSON.stringify(list, null, 2), { mode: 0o600 });
+  await fs.promises.rename(tmp, LEADS_FILE);
+  return record;
+}
 function appendLead(record) {
-  writeChain = writeChain.then(
-    () =>
-      new Promise((resolve, reject) => {
-        fs.readFile(LEADS_FILE, "utf8", (err, raw) => {
-          if (err) return reject(err);
-          let list = [];
-          try {
-            list = JSON.parse(raw || "[]");
-          } catch (e) {
-            list = [];
-          }
-          list.push(record);
-          fs.writeFile(LEADS_FILE, JSON.stringify(list, null, 2), (err2) => {
-            if (err2) return reject(err2);
-            resolve(record);
-          });
-        });
-      })
-  );
-  return writeChain;
+  const result = writeChain.then(() => writeLead(record));
+  // keep the queue alive after a failed write; the caller still sees the error
+  writeChain = result.catch(() => {});
+  return result;
+}
+function readLeads() {
+  return JSON.parse(fs.readFileSync(LEADS_FILE, "utf8") || "[]");
 }
 
 // ---------------------------------------------------------------------
 // simple per-IP rate limiter (in-memory) for the lead endpoints
 // ---------------------------------------------------------------------
-const hits = new Map();
-function isRateLimited(ip) {
-  const now = Date.now();
-  const windowMs = 60 * 1000;
-  const max = 10;
-  const entry = hits.get(ip) || [];
-  const recent = entry.filter((t) => now - t < windowMs);
-  recent.push(now);
-  hits.set(ip, recent);
-  return recent.length > max;
+const RATE_WINDOW_MS = 60 * 1000;
+function createRateLimiter(max) {
+  const hits = new Map();
+  // drop idle IPs so the map can't grow without bound
+  setInterval(() => {
+    const now = Date.now();
+    for (const [ip, times] of hits) {
+      if (!times.some((t) => now - t < RATE_WINDOW_MS)) hits.delete(ip);
+    }
+  }, RATE_WINDOW_MS).unref();
+  const recent = (ip) => (hits.get(ip) || []).filter((t) => Date.now() - t < RATE_WINDOW_MS);
+  return {
+    // record a hit; true if this IP is now over the limit
+    hit(ip) {
+      const times = recent(ip);
+      times.push(Date.now());
+      hits.set(ip, times);
+      return times.length > max;
+    },
+    // over the limit already, without recording anything
+    blocked(ip) {
+      return recent(ip).length >= max;
+    },
+  };
+}
+const leadLimiter = createRateLimiter(10); // lead submissions per IP per minute
+const adminLoginLimiter = createRateLimiter(10); // failed admin logins per IP per minute
+
+// The client IP. X-Forwarded-For is only trusted behind our own proxy, and
+// then only its LAST entry: that's the one the proxy appended; anything to
+// its left was sent by the client and can be forged.
+function clientIp(req) {
+  if (CONFIG.TRUST_PROXY && req.headers["x-forwarded-for"]) {
+    const parts = String(req.headers["x-forwarded-for"]).split(",");
+    const last = parts[parts.length - 1].trim();
+    if (last) return last;
+  }
+  return req.socket.remoteAddress || "unknown";
 }
 
 // ---------------------------------------------------------------------
 // lead schema validation per form type — mirrors the Section 5 brief:
 //   Customer: Name, Mobile, City, Phone Brand/Model
 //   Retailer: Store Name, Owner Name, Mobile, City, GST (optional)
-//   Vendor:   Business Name, Mobile, City, GST/PAN
+//   Vendor:   Business Name, Mobile, City, GST/PAN  (shown as "Buyer" on the
+//             site; kept as "vendor" to match the app backend's role name)
+//   Sell:     website "Sell Your Device" journey — device fields use the
+//             same names/values as the app backend's catalog so the request
+//             can be turned into a device listing without remapping
 // plus partner + contact, which the brief doesn't specify fields for.
 // ---------------------------------------------------------------------
 const SCHEMAS = {
@@ -106,6 +145,13 @@ const SCHEMAS = {
   vendor: {
     required: ["businessName", "mobile", "city", "gstOrPan"],
     optional: [],
+  },
+  sell: {
+    required: ["platform", "brand", "model", "storage", "name", "mobile", "city", "pincode"],
+    optional: [
+      "ram", "batteryHealth", "screenDamage", "bodyScratches", "deviceAge",
+      "box", "bill", "charger", "catalogVersion",
+    ],
   },
   partner: {
     required: ["name", "company", "mobile", "city", "partnershipType"],
@@ -125,12 +171,16 @@ function isValidEmail(v) {
 }
 
 function validateLead(type, body) {
-  const schema = SCHEMAS[type];
+  const schema = Object.prototype.hasOwnProperty.call(SCHEMAS, type) ? SCHEMAS[type] : null;
   if (!schema) return { ok: false, message: "Unknown form type." };
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return { ok: false, message: "Invalid submission." };
+  }
   if (body._hp) return { ok: false, message: "Rejected." }; // honeypot tripped
 
   for (const field of schema.required) {
-    if (!body[field] || !String(body[field]).trim()) {
+    const v = body[field];
+    if (!v || typeof v === "object" || !String(v).trim()) {
       return { ok: false, message: `Missing required field: ${field}.` };
     }
   }
@@ -140,10 +190,24 @@ function validateLead(type, body) {
   if (body.email && !isValidEmail(body.email)) {
     return { ok: false, message: "Enter a valid email address." };
   }
+  if (type === "sell") {
+    if (!["apple", "android"].includes(body.platform)) {
+      return { ok: false, message: "Select Apple or Android." };
+    }
+    if (!/^[1-9]\d{5}$/.test(String(body.pincode).trim())) {
+      return { ok: false, message: "Enter a valid 6-digit pincode." };
+    }
+    if (body.batteryHealth && !/^(100|[1-9]?\d)$/.test(String(body.batteryHealth).trim())) {
+      return { ok: false, message: "Battery health should be a number between 0 and 100." };
+    }
+  }
 
   const clean = {};
   [...schema.required, ...schema.optional].forEach((f) => {
-    if (body[f] !== undefined) clean[f] = String(body[f]).trim().slice(0, 500);
+    const v = body[f];
+    if (v === undefined || v === null) return;
+    if (typeof v === "object") return; // only plain values are accepted
+    clean[f] = String(v).trim().slice(0, f === "message" ? 2000 : 200);
   });
   return { ok: true, data: clean };
 }
@@ -184,14 +248,69 @@ function forwardToAppApi(record) {
 }
 
 // ---------------------------------------------------------------------
+// device catalog for the website sell journey, proxied from the TEKRIO app
+// backend's public GET /catalog (its CORS doesn't allow the website origin,
+// and caching here keeps the page fast). Falls back to the last good copy,
+// and the browser has its own minimal fallback if this returns an error.
+// ---------------------------------------------------------------------
+const CATALOG_TTL_MS = 60 * 60 * 1000;
+let catalogCache = { data: null, fetchedAt: 0 };
+const CATALOG_RETRY_MS = 60 * 1000; // after a failure, don't refetch per request
+let catalogFailedAt = 0;
+function fetchJson(url, timeoutMs = 5000, maxBytes = 2e6) {
+  return new Promise((resolve, reject) => {
+    const target = new URL(url);
+    const lib = target.protocol === "https:" ? require("https") : http;
+    const req = lib.get(target, { timeout: timeoutMs }, (res) => {
+      let raw = "";
+      res.on("data", (c) => {
+        raw += c;
+        if (raw.length > maxBytes) req.destroy(new Error("response too large"));
+      });
+      res.on("end", () => {
+        if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode}`));
+        try {
+          resolve(JSON.parse(raw));
+        } catch (e) {
+          reject(e);
+        }
+      });
+    });
+    req.on("timeout", () => req.destroy(new Error("timeout")));
+    req.on("error", reject);
+  });
+}
+async function getCatalog() {
+  if (catalogCache.data && Date.now() - catalogCache.fetchedAt < CATALOG_TTL_MS) {
+    return catalogCache.data;
+  }
+  if (!catalogCache.data && Date.now() - catalogFailedAt < CATALOG_RETRY_MS) {
+    throw new Error("catalog recently unavailable");
+  }
+  try {
+    const json = await fetchJson(CONFIG.BACKEND_API_BASE_URL + "/catalog");
+    if (!json || !json.data) throw new Error("unexpected catalog shape");
+    catalogCache = { data: json.data, fetchedAt: Date.now() };
+  } catch (e) {
+    console.error("[catalog] fetch failed:", e.message);
+    catalogFailedAt = Date.now();
+    if (!catalogCache.data) throw e;
+    catalogCache.fetchedAt = Date.now() - CATALOG_TTL_MS + CATALOG_RETRY_MS; // serve stale, retry soon
+  }
+  return catalogCache.data;
+}
+
+// ---------------------------------------------------------------------
 // admin basic auth (credentials via config.js / env — see README)
 // ---------------------------------------------------------------------
 function checkBasicAuth(req) {
+  if (!CONFIG.ADMIN_PASSWORD) return false; // admin disabled, never match ""
   const header = req.headers["authorization"] || "";
   const [scheme, encoded] = header.split(" ");
   if (scheme !== "Basic" || !encoded) return false;
   const decoded = Buffer.from(encoded, "base64").toString("utf8");
   const idx = decoded.indexOf(":");
+  if (idx < 0) return false;
   const user = decoded.slice(0, idx);
   const pass = decoded.slice(idx + 1);
   return (
@@ -199,13 +318,16 @@ function checkBasicAuth(req) {
     timingSafeEqual(pass, CONFIG.ADMIN_PASSWORD)
   );
 }
+// compare fixed-length digests so neither content nor length leaks via timing
 function timingSafeEqual(a, b) {
-  const bufA = Buffer.from(String(a));
-  const bufB = Buffer.from(String(b));
-  if (bufA.length !== bufB.length) return false;
-  return crypto.timingSafeEqual(bufA, bufB);
+  const hash = (v) => crypto.createHash("sha256").update(String(v)).digest();
+  return crypto.timingSafeEqual(hash(a), hash(b));
 }
 function requireAuth(res) {
+  if (!CONFIG.ADMIN_PASSWORD) {
+    res.writeHead(503, { "Content-Type": "text/plain" });
+    return res.end("Admin dashboard is disabled. Set TEKRIO_ADMIN_PASSWORD to enable it.");
+  }
   res.writeHead(401, {
     "WWW-Authenticate": 'Basic realm="TEKRIO Admin"',
     "Content-Type": "text/plain",
@@ -216,28 +338,92 @@ function requireAuth(res) {
 // ---------------------------------------------------------------------
 // static file serving (with basic path traversal protection)
 // ---------------------------------------------------------------------
+// Text files are compressed (Brotli, else gzip) once and kept in memory
+// until the file changes; the whole site is well under 1 MB.
+const COMPRESSIBLE = new Set([".html", ".css", ".js", ".json", ".svg", ".xml", ".txt", ".webmanifest"]);
+const compressedCache = new Map(); // filePath -> { mtimeMs, br, gzip }
+function compressed(filePath, stat, content, encoding) {
+  let entry = compressedCache.get(filePath);
+  if (!entry || entry.mtimeMs !== stat.mtimeMs) {
+    entry = { mtimeMs: stat.mtimeMs };
+    compressedCache.set(filePath, entry);
+  }
+  if (!entry[encoding]) {
+    entry[encoding] =
+      encoding === "br"
+        ? zlib.brotliCompressSync(content, {
+            params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 11 },
+          })
+        : zlib.gzipSync(content, { level: 9 });
+  }
+  return entry[encoding];
+}
+function pickEncoding(req) {
+  const accept = String(req.headers["accept-encoding"] || "");
+  if (/\bbr\b/.test(accept)) return "br";
+  if (/\bgzip\b/.test(accept)) return "gzip";
+  return null;
+}
+
+function sendFile(req, res, filePath, stat) {
+  const ext = path.extname(filePath).toLowerCase();
+  const lastModified = stat.mtime.toUTCString();
+  // assets aren't fingerprinted, so keep caching short enough that a
+  // redeploy shows up within the hour; HTML always revalidates
+  const headers = {
+    "Content-Type": MIME[ext] || "application/octet-stream",
+    "Cache-Control": ext === ".html" ? "no-cache" : "public, max-age=3600",
+    "Last-Modified": lastModified,
+    Vary: "Accept-Encoding",
+  };
+  const since = Date.parse(req.headers["if-modified-since"] || "");
+  if (since && Math.floor(stat.mtimeMs / 1000) * 1000 <= since) {
+    res.writeHead(304, headers);
+    return res.end();
+  }
+  fs.readFile(filePath, (err, content) => {
+    if (err) return serve404(res);
+    const encoding = COMPRESSIBLE.has(ext) && content.length > 1024 ? pickEncoding(req) : null;
+    let body = content;
+    if (encoding) {
+      body = compressed(filePath, stat, content, encoding);
+      headers["Content-Encoding"] = encoding;
+    }
+    headers["Content-Length"] = body.length;
+    res.writeHead(200, headers);
+    res.end(req.method === "HEAD" ? undefined : body);
+  });
+}
+
+// ---------------------------------------------------------------------
+// static file serving (with basic path traversal protection)
+// ---------------------------------------------------------------------
 function serveStatic(req, res, urlPath) {
-  let rel = decodeURIComponent(urlPath.split("?")[0]);
+  let rel;
+  try {
+    rel = decodeURIComponent(urlPath.split("?")[0]);
+  } catch (e) {
+    return serve404(res); // malformed %-escape
+  }
+  if (rel.includes("\0")) return serve404(res);
   if (rel === "/") rel = "/index.html";
   const filePath = path.normalize(path.join(PUBLIC_DIR, rel));
-  if (!filePath.startsWith(PUBLIC_DIR)) {
+  // require the separator so a sibling like "public-old/" can't match
+  if (!filePath.startsWith(PUBLIC_DIR + path.sep)) {
     res.writeHead(403);
     return res.end("Forbidden");
   }
-  fs.readFile(filePath, (err, content) => {
-    if (err) {
-      // try adding .html for pretty URLs like /about
-      const withHtml = filePath + ".html";
-      fs.readFile(withHtml, (err2, content2) => {
-        if (err2) return serve404(res);
-        res.writeHead(200, { "Content-Type": MIME[".html"] });
-        res.end(content2);
-      });
-      return;
-    }
-    const ext = path.extname(filePath).toLowerCase();
-    res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream" });
-    res.end(content);
+  fs.stat(filePath, (err, stat) => {
+    if (!err && stat.isFile()) return sendFile(req, res, filePath, stat);
+    // "/about" -> 301 to "/about.html", so each page has one URL
+    fs.stat(filePath + ".html", (err2, stat2) => {
+      if (err2 || !stat2.isFile()) return serve404(res);
+      // build the target from the resolved file, never from the raw URL,
+      // so a path like "//about" can't become a redirect to another host
+      const target = "/" + path.relative(PUBLIC_DIR, filePath).split(path.sep).join("/") + ".html";
+      res.writeHead(301, { Location: target });
+      res.end();
+    });
   });
 }
 
@@ -258,15 +444,17 @@ function sendJson(res, status, obj) {
   res.end(body);
 }
 
-function readBody(req, maxBytes = 1e6) {
+function readBody(req, maxBytes = 16 * 1024) {
   return new Promise((resolve, reject) => {
     let data = "";
     let size = 0;
     req.on("data", (chunk) => {
       size += chunk.length;
       if (size > maxBytes) {
+        // stop buffering and drain the rest, so we can still answer 413
+        req.removeAllListeners("data");
+        req.resume();
         reject(new Error("Payload too large"));
-        req.destroy();
         return;
       }
       data += chunk;
@@ -290,7 +478,7 @@ function escapeHtml(str) {
 // portal placeholder page (retailer/vendor OTP login — pending API)
 // ---------------------------------------------------------------------
 function renderPortalPage(kind) {
-  const label = kind === "retailer" ? "Retailer" : "Vendor";
+  const label = kind === "retailer" ? "Retailer" : "Buyer";
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${label} Login | TEKRIO</title>
@@ -371,23 +559,57 @@ td:first-child { white-space:nowrap; color:var(--slate); font-size:0.82rem; }
 // ---------------------------------------------------------------------
 // request handler
 // ---------------------------------------------------------------------
+// Scripts only from our own origin (plus Google Analytics); styles allow
+// inline because the pages use style="" attributes.
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self' https://www.googletagmanager.com",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' https://fonts.gstatic.com",
+  "img-src 'self' data: https://www.google-analytics.com https://www.googletagmanager.com",
+  "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'self'",
+].join("; ");
+
+const SECURITY_HEADERS = {
+  "Content-Security-Policy": CSP,
+  "Cross-Origin-Opener-Policy": "same-origin",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "SAMEORIGIN",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+  ...(CONFIG.IS_PRODUCTION
+    ? { "Strict-Transport-Security": "max-age=31536000; includeSubDomains" }
+    : {}),
+};
+
 const server = http.createServer(async (req, res) => {
+  for (const [name, value] of Object.entries(SECURITY_HEADERS)) res.setHeader(name, value);
   try {
-    const parsed = new URL(req.url, `http://${req.headers.host}`);
-    const pathname = parsed.pathname;
-    const ip =
-      req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown";
+    // fixed base: the Host header is client-controlled and may be malformed
+    const pathname = new URL(req.url, "http://localhost").pathname;
+    const ip = clientIp(req);
 
     // ---- lead capture API ----
     if (pathname.startsWith("/api/leads/") && req.method === "POST") {
       const type = pathname.replace("/api/leads/", "").trim();
-      if (isRateLimited(ip)) {
+      // Requiring JSON forces a CORS preflight for cross-site requests, which
+      // this server never approves, so other sites can't post forms here.
+      const contentType = String(req.headers["content-type"] || "").split(";")[0].trim();
+      if (contentType !== "application/json") {
+        return sendJson(res, 415, { message: "Unsupported content type." });
+      }
+      if (leadLimiter.hit(ip)) {
         return sendJson(res, 429, { message: "Too many submissions. Please try again in a minute." });
       }
       let raw;
       try {
         raw = await readBody(req);
       } catch (e) {
+        res.setHeader("Connection", "close");
         return sendJson(res, 413, { message: "Request too large." });
       }
       let body;
@@ -405,7 +627,7 @@ const server = http.createServer(async (req, res) => {
         type,
         ...result.data,
         createdAt: new Date().toISOString(),
-        ip: String(ip).split(",")[0].trim(),
+        ip,
       };
       try {
         await appendLead(record);
@@ -416,30 +638,67 @@ const server = http.createServer(async (req, res) => {
       forwardToAppApi(record); // no-op until APP_API_WEBHOOK_URL is configured
       return sendJson(res, 200, {
         message: "Thanks! Our team will reach out shortly.",
+        reference: record.id.slice(0, 8).toUpperCase(),
       });
     }
 
-    // ---- admin dashboard ----
-    if (pathname === "/admin" || pathname === "/admin/") {
-      if (!checkBasicAuth(req)) return requireAuth(res);
-      const leads = JSON.parse(fs.readFileSync(LEADS_FILE, "utf8") || "[]");
-      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-      return res.end(renderAdminPage(leads));
+    // ---- device catalog (from the TEKRIO app backend) ----
+    if (pathname === "/api/catalog" && req.method === "GET") {
+      try {
+        const data = await getCatalog();
+        res.setHeader("Cache-Control", "public, max-age=300");
+        return sendJson(res, 200, { data });
+      } catch (e) {
+        return sendJson(res, 503, { message: "Catalog unavailable." });
+      }
     }
-    if (pathname === "/api/admin/leads") {
-      if (!checkBasicAuth(req)) return requireAuth(res);
-      const leads = JSON.parse(fs.readFileSync(LEADS_FILE, "utf8") || "[]");
-      return sendJson(res, 200, leads);
+
+    // ---- admin dashboard ----
+    const isAdmin = pathname === "/admin" || pathname === "/admin/";
+    if (isAdmin || pathname === "/api/admin/leads") {
+      // personal data: never cache, never index
+      res.setHeader("Cache-Control", "no-store");
+      res.setHeader("X-Robots-Tag", "noindex, nofollow");
+      // check the lockout before the password, so guesses stop being
+      // evaluated at all once an IP is locked out
+      if (adminLoginLimiter.blocked(ip)) {
+        res.writeHead(429, { "Content-Type": "text/plain", "Retry-After": "60" });
+        return res.end("Too many failed attempts. Try again in a minute.");
+      }
+      if (!checkBasicAuth(req)) {
+        if (req.headers["authorization"]) adminLoginLimiter.hit(ip);
+        return requireAuth(res);
+      }
+      if (isAdmin) {
+        res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+        return res.end(renderAdminPage(readLeads()));
+      }
+      return sendJson(res, 200, readLeads());
     }
 
     // ---- portal placeholders (pending app/API + OTP login) ----
+    if (pathname.startsWith("/portal/")) {
+      // placeholder pages: keep them out of search results
+      res.setHeader("X-Robots-Tag", "noindex, nofollow");
+    }
     if (pathname === "/portal/retailer-login") {
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
       return res.end(renderPortalPage("retailer"));
     }
-    if (pathname === "/portal/vendor-login") {
+    if (pathname === "/portal/buyer-login") {
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-      return res.end(renderPortalPage("vendor"));
+      return res.end(renderPortalPage("buyer"));
+    }
+
+    // ---- renamed pages (Vendor -> Buyer); keep old links working ----
+    const MOVED = {
+      "/portal/vendor-login": "/portal/buyer-login",
+      "/for-vendors.html": "/for-buyers.html",
+      "/for-vendors": "/for-buyers.html",
+    };
+    if (MOVED[pathname]) {
+      res.writeHead(301, { Location: MOVED[pathname] });
+      return res.end();
     }
 
     // ---- health check ----
@@ -461,7 +720,26 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
+// cut off slow/idle clients (slowloris) well before Node's 5-minute default
+server.requestTimeout = 30 * 1000;
+server.headersTimeout = 15 * 1000;
+
 server.listen(PORT, () => {
   console.log(`TEKRIO server running at http://localhost:${PORT}`);
-  console.log(`Admin dashboard: http://localhost:${PORT}/admin (user: ${CONFIG.ADMIN_USER})`);
+  console.log(`Leads file: ${LEADS_FILE}`);
+  if (CONFIG.ADMIN_PASSWORD) {
+    console.log(`Admin dashboard: http://localhost:${PORT}/admin (user: ${CONFIG.ADMIN_USER})`);
+  } else {
+    console.warn("Admin dashboard disabled: set TEKRIO_ADMIN_PASSWORD to enable /admin.");
+  }
 });
+
+// let the process manager / platform stop us cleanly (finish in-flight
+// requests, including a pending leads.json write)
+function shutdown(signal) {
+  console.log(`${signal} received, shutting down.`);
+  server.close(() => writeChain.finally(() => process.exit(0)));
+  setTimeout(() => process.exit(1), 10000).unref();
+}
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));

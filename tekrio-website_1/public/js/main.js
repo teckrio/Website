@@ -9,6 +9,14 @@
       var open = panel.classList.toggle("open");
       toggle.setAttribute("aria-expanded", open ? "true" : "false");
     });
+    // Escape closes the open menu and returns focus to the toggle
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && panel.classList.contains("open")) {
+        panel.classList.remove("open");
+        toggle.setAttribute("aria-expanded", "false");
+        toggle.focus();
+      }
+    });
     panel.querySelectorAll("a").forEach(function (a) {
       a.addEventListener("click", function () {
         panel.classList.remove("open");
@@ -46,10 +54,25 @@
   });
 
   // ---------- lead forms ----------
+  // show/clear a field's error and expose it to screen readers: the
+  // control is marked invalid and points at its message
+  var errorSeq = 0;
   function setFieldError(field, message) {
     field.classList.toggle("invalid", !!message);
     var err = field.querySelector(".field-error");
-    if (err) err.textContent = message || "";
+    if (!err) return;
+    err.textContent = message || "";
+    if (!err.id) err.id = "field-error-" + ++errorSeq;
+    field.querySelectorAll("input, select, textarea").forEach(function (input) {
+      if (input.type === "hidden") return;
+      if (message) {
+        input.setAttribute("aria-invalid", "true");
+        input.setAttribute("aria-describedby", err.id);
+      } else {
+        input.removeAttribute("aria-invalid");
+        input.removeAttribute("aria-describedby");
+      }
+    });
   }
 
   function validateForm(form) {
@@ -96,6 +119,8 @@
           statusEl.textContent = "Please fix the highlighted fields.";
           statusEl.classList.add("show", "err");
         }
+        var firstBad = form.querySelector("[aria-invalid=true]");
+        if (firstBad) firstBad.focus();
         return;
       }
 

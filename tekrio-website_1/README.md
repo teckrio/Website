@@ -14,8 +14,18 @@ routes in `server.js` are already organized by concern.
 ## What's included (done, working)
 
 - **All 10 pages** from the brief: Home, About, How It Works, For
-  Customers, For Retailers, For Vendors, Partner With Us, Contact, FAQ,
-  Privacy Policy & Terms.
+  Customers, For Retailers, For Buyers (formerly For Vendors), Partner
+  With Us, Contact, FAQ, Privacy Policy & Terms.
+- **Sell Your Device** (`/sell.html`): a guided journey (Select Device ->
+  Add Details -> Get Offers -> Choose Offer -> Complete Transaction). Its
+  storage/RAM/condition options come live from the TEKRIO app backend's
+  public `GET /catalog` (proxied and cached for 1 hour at `/api/catalog`,
+  with a built-in fallback), so the website and the retailer app describe
+  devices identically. Submissions are saved as `sell` leads.
+- **Terminology:** the three sides are Customer | Retailer | Buyer. Old
+  `/for-vendors.html` and `/portal/vendor-login` URLs 301-redirect to the
+  Buyer equivalents. Internally the lead type stays `vendor` to match the
+  app backend's role name.
 - **Homepage content matches the brief's exact copy** (headline,
   sub-headline, CTAs, 3-step process, 3-audience section, trust section,
   final CTA, footer).
@@ -46,8 +56,8 @@ As requested, everything that depends on the **TEKRIO mobile app's own
 backend/API** (which doesn't exist yet) is stubbed cleanly rather than
 faked:
 
-1. **Retailer/Vendor OTP login.** `/portal/retailer-login` and
-   `/portal/vendor-login` currently show an honest holding page
+1. **Retailer/Buyer OTP login.** `/portal/retailer-login` and
+   `/portal/buyer-login` currently show an honest holding page
    ("login is on its way") instead of a broken or fake login form, with a
    link to the registration form instead. Once the app exposes an OTP
    login/redirect URL, replace the two routes in `server.js`
@@ -62,8 +72,16 @@ faked:
    TEKRIO_APP_API_KEY=your-bearer-token   # optional
    ```
    No code changes needed — just set the variables and restart.
-3. **"30-second listing in the TEKRIO app" / "live vendor bidding" UI.**
-   These are described on the Retailer/Vendor pages as product features of
+3. **Sell requests -> app backend.** The backend currently has no public
+   endpoint for customer sell requests (`POST /devices` needs a Store
+   Manager login, a `branchId` and both IMEIs). Sell requests are stored
+   locally and sent through the webhook above; once the backend adds an
+   intake endpoint, point `TEKRIO_APP_API_WEBHOOK_URL` at it. The request's
+   device fields (`platform`, `model`, `storage`, `ram`, `batteryHealth`,
+   `screenDamage`, `bodyScratches`, `deviceAge`, `box`, `bill`, `charger`)
+   already use the backend catalog's names and values.
+4. **Retailer listing / buyer offers UI.**
+   These are described on the Retailer/Buyer pages as product features of
    the app itself (marked with an amber "pending" badge), not built as
    part of this website, since they belong to the app's own UI.
 
@@ -83,11 +101,10 @@ Everything else in the original brief has been built for real.
   be layered on top of this same site.
 - **Hosting, domain, SSL.** The code is ready to deploy (see below), but
   actually pointing `www.tekrio.in` at a server, obtaining SSL, and
-  configuring backups depends on your AWS/DigitalOcean account
-  credentials, which weren't available here.
-- **Google Analytics / Search Console.** The loader and a verification
-  meta-tag slot are wired up and inert until you supply real IDs (see
-  below) — creating those properties requires your Google account.
+  configuring backups depends on your hosting account.
+- **Google Analytics / Search Console.** Both are wired up and switch on
+  via environment variables (see below) — creating those properties
+  requires your Google account.
 
 ## Project structure
 
@@ -103,75 +120,140 @@ tekrio/
 │   ├── js/{main.js,analytics.js}
 │   ├── images/
 │   └── *.html, sitemap.xml, robots.txt
-├── data/leads.json       # captured leads (auto-created)
-├── config.js             # admin credentials + pending app-API settings
-└── server.js             # zero-dependency Node HTTP server
+├── data/leads.json       # captured leads (auto-created, git-ignored)
+├── config.js             # all settings, read from environment variables
+├── server.js             # zero-dependency Node HTTP server
+├── Dockerfile            # container build for Docker-based hosts
+└── .env.example          # every environment variable, documented
 ```
 
 Edit content in `content/pages/` or styles in `public/css/style.css`,
-then run `npm run build` (only needed after editing `content/` or
-`scripts/`; CSS/JS edits under `public/` take effect immediately).
+then run `npm run build` (also after editing CSS/JS under `public/`:
+the build stamps each CSS/JS link with a version code so browsers pick
+up the new file instead of a cached one).
 
 ## Running it
 
 ```bash
-npm run build     # generates /public/*.html from content/ + templates/
-npm start         # serves the site on http://localhost:3000
-# or: npm run dev # build + start in one step
+npm start         # builds /public from content/ + templates/, then serves
+                  # the site on http://localhost:3000
+npm run serve     # serve only, without rebuilding
 ```
 
-Visit `http://localhost:3000`. Admin dashboard: `http://localhost:3000/admin`
-(default credentials below — change them before deploying).
+Visit `http://localhost:3000`. Locally, the admin dashboard at
+`http://localhost:3000/admin` uses `admin` / `tekrio-admin-dev`. With
+`NODE_ENV=production` there is **no default password**: `/admin` stays
+disabled until `TEKRIO_ADMIN_PASSWORD` is set.
 
 ### Configuration (environment variables)
 
+See `.env.example` for a ready-to-copy list.
+
 | Variable | Purpose | Default |
 |---|---|---|
+| `NODE_ENV` | set to `production` on the live server | unset |
 | `PORT` | server port | `3000` |
 | `TEKRIO_ADMIN_USER` | `/admin` username | `admin` |
-| `TEKRIO_ADMIN_PASSWORD` | `/admin` password | `tekrio-admin-2026` (**change this**) |
+| `TEKRIO_ADMIN_PASSWORD` | `/admin` password (**required** in production to enable `/admin`) | dev only: `tekrio-admin-dev` |
+| `TEKRIO_DATA_DIR` | folder for `leads.json`; use a persistent disk | `./data` |
+| `TEKRIO_TRUST_PROXY` | `true` when behind Nginx/Caddy/a platform proxy, so rate limiting uses the real client IP | `false` |
+| `TEKRIO_GA_ID` | GA4 Measurement ID, applied at build time | unset (analytics off) |
+| `TEKRIO_GSC_VERIFICATION` | Search Console verification token, applied at build time | unset |
+| `TEKRIO_BACKEND_API_BASE_URL` | TEKRIO app backend (device catalog) | Railway production URL |
 | `TEKRIO_APP_API_WEBHOOK_URL` | pending — see above | unset (no-op) |
 | `TEKRIO_APP_API_KEY` | pending — see above | unset |
 
-## Deployment (AWS / DigitalOcean, as the brief specifies)
+## Deployment
+
+### Pre-launch checklist
+
+- [ ] `NODE_ENV=production` and a strong `TEKRIO_ADMIN_PASSWORD` set
+- [ ] `TEKRIO_DATA_DIR` on storage that survives redeploys, with backups
+- [ ] `TEKRIO_TRUST_PROXY=true` if (and only if) behind a reverse proxy
+- [ ] HTTPS working for `www.tekrio.in`, and `tekrio.in` redirecting to it
+- [ ] `TEKRIO_GA_ID` / `TEKRIO_GSC_VERIFICATION` set if analytics is wanted
+- [ ] Privacy Policy & Terms reviewed by legal counsel (see Legal note)
+- [ ] `/healthz` returns `{"status":"ok"}` and a test sell request shows in `/admin`
+
+### Option A: a VM (AWS EC2 / DigitalOcean Droplet)
 
 1. Provision a small VM (e.g. a DigitalOcean Droplet or AWS EC2
-   `t3.micro`), install Node 18+.
-2. Copy this project to the server, run `npm run build`.
-3. Run the server under a process manager, e.g.:
+   `t3.micro`) and install Node 18+.
+2. Copy this project to the server and create a `.env` from
+   `.env.example` (or export the variables in your process manager).
+3. Run it under a process manager so it restarts on crash/reboot:
    ```bash
-   TEKRIO_ADMIN_PASSWORD=<strong-password> \
-   npm start
-   # or with pm2:
-   pm2 start server.js --name tekrio -- 
+   pm2 start npm --name tekrio -- start
+   pm2 save && pm2 startup
    ```
-4. Put Nginx (or Caddy) in front of it as a reverse proxy to `localhost:3000`
-   and obtain a free SSL certificate for `www.tekrio.in` via Let's Encrypt
-   (Certbot). Caddy will do this automatically with a two-line config.
-5. Point the domain's DNS `A`/`CNAME` records at the server.
-6. Set up automated backups of `data/leads.json` (or migrate it to a
-   managed database once lead volume grows — the storage layer in
+4. Put Caddy (or Nginx) in front as a reverse proxy to `localhost:3000`.
+   Caddy obtains the SSL certificate automatically:
+   ```
+   www.tekrio.in {
+     reverse_proxy localhost:3000
+   }
+   tekrio.in {
+     redir https://www.tekrio.in{uri} permanent
+   }
+   ```
+5. Point the domain's DNS `A` records at the server.
+6. Back up `leads.json` in `TEKRIO_DATA_DIR` regularly (or migrate it to
+   a managed database once lead volume grows — the storage layer in
    `server.js` is isolated behind `appendLead()` so swapping it out later
    is a small, contained change).
 
+### Option B: Docker / container platforms (Railway, Render, Fly.io)
+
+```bash
+docker build -t tekrio-website .
+docker run -d -p 3000:3000 -v tekrio-data:/data \
+  -e TEKRIO_ADMIN_PASSWORD=<strong-password> -e TEKRIO_TRUST_PROXY=true \
+  tekrio-website
+```
+
+On a platform, attach a **persistent volume at `/data`**: these hosts
+wipe the app's own filesystem on every redeploy, which would delete all
+captured leads.
+
+## Security
+
+Built into `server.js`:
+
+- `/admin` has no default password in production, and each IP is locked
+  out for a minute after 10 failed logins. Admin responses are sent
+  `no-store` / `noindex`.
+- Content-Security-Policy (no inline or third-party scripts except Google
+  Analytics), HSTS in production, clickjacking and MIME-sniffing headers.
+- Lead forms: JSON-only (so other sites can't post into them), 16 KB body
+  limit, per-field length caps, unknown fields dropped, 10 submissions per
+  IP per minute. `X-Forwarded-For` is only trusted with
+  `TEKRIO_TRUST_PROXY=true`, and then only its last (proxy-added) entry.
+- `leads.json` is written atomically with owner-only permissions (0600),
+  and the server refuses to overwrite it if it's ever corrupted, rather
+  than losing earlier leads.
+- Static files can't be read outside `public/`; slow clients time out
+  after 15 s (headers) / 30 s (request).
+
+Also keep the Node runtime patched (`node:20-alpine` in the Dockerfile
+picks up fixes on rebuild) and serve the site only over HTTPS.
+
 ## Turning on Analytics & Search Console
 
-1. Create a GA4 property for `www.tekrio.in`, copy its Measurement ID
-   (`G-XXXXXXXXXX`).
-2. In `templates/_shell.html`, replace `G-XXXXXXXXXX` in the
-   `window.__TEKRIO_GA_ID` line with the real ID, then `npm run build`.
-3. Create a Google Search Console property for `www.tekrio.in`, and paste
-   its verification `<meta>` tag into `templates/_shell.html` where marked,
-   then `npm run build`. Submit `https://www.tekrio.in/sitemap.xml` in
-   Search Console once live.
+1. Create a GA4 property for `www.tekrio.in` and set its Measurement ID
+   (`G-...`) as `TEKRIO_GA_ID`.
+2. Create a Google Search Console property for `www.tekrio.in` using the
+   "HTML tag" method and set the token from its `content="..."` as
+   `TEKRIO_GSC_VERIFICATION`.
+3. Restart with `npm start` (it rebuilds the pages with both applied).
+   Submit `https://www.tekrio.in/sitemap.xml` in Search Console once live.
 
 ## Form fields captured (per the brief's Section 5)
 
 | Form | Fields |
 |---|---|
-| Customer (`/for-customers.html`) | Name, Mobile, City, Phone Brand/Model |
+| Sell (`/sell.html`) | Platform, Brand, Model, Storage, RAM, Screen/Body condition, Device age, Battery health, Box/Bill/Charger, Name, Mobile, City, Pincode |
 | Retailer (`/for-retailers.html`) | Store Name, Owner Name, Mobile, City, GSTIN (optional) |
-| Vendor (`/for-vendors.html`) | Business Name, Mobile, City, GST/PAN |
+| Buyer (`/for-buyers.html`) | Business Name, Mobile, City, GST/PAN |
 | Partner (`/partner.html`) | Name, Company, Mobile, City, Partnership Type, Message |
 | Contact (`/contact.html`) | Name, Email, Mobile, Topic, Message |
 

@@ -9,23 +9,25 @@
 <link rel="canonical" href="https://www.tekrio.in/contact.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="TEKRIO">
-<meta property="og:title" content="{{TITLE}}">
-<meta property="og:description" content="{{DESC}}">
+<meta property="og:title" content="Contact Us | TEKRIO">
+<meta property="og:description" content="Get in touch with the TEKRIO team at Anabriya Technologies LLP. Based in Bengaluru, Karnataka. Email support@tekrio.in.">
 <meta property="og:url" content="https://www.tekrio.in/contact.html">
+<meta property="og:image" content="https://www.tekrio.in/images/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://www.tekrio.in/images/og-image.png">
 <meta name="theme-color" content="#10262B">
 <link rel="icon" href="/images/favicon.svg" type="image/svg+xml">
-<!-- Google Search Console: paste the verification meta tag Search Console
-     gives you for www.tekrio.in here once the property is created, e.g.
-     <meta name="google-site-verification" content="..."> -->
+<link rel="apple-touch-icon" href="/images/logo.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css?v=0cd6fd9d">
 
-<!-- Google Analytics (GA4) — replace G-XXXXXXXXXX once the property is created -->
-<script>window.__TEKRIO_GA_ID = "G-XXXXXXXXXX";</script>
-<script defer src="/js/analytics.js"></script>
+<!-- Google Analytics (GA4): set TEKRIO_GA_ID when running `npm run build` -->
+<script defer src="/js/analytics.js?v=f4489bd4" data-ga-id=""></script>
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -38,16 +40,16 @@
     <nav class="main-nav" aria-label="Primary">
       <a href="/" class="">Home</a>
       <a href="/how-it-works.html" class="">How It Works</a>
-      <a href="/for-customers.html" class="">For Customers</a>
-      <a href="/for-retailers.html" class="">For Retailers</a>
-      <a href="/for-vendors.html" class="">For Vendors</a>
-      <a href="/partner.html" class="">Partner With Us</a>
+      <a href="/for-customers.html" class="">Customers</a>
+      <a href="/for-retailers.html" class="">Retailers</a>
+      <a href="/for-buyers.html" class="">Buyers</a>
+      <a href="/partner.html" class="">Partners</a>
       <a href="/contact.html" class="active">Contact</a>
     </nav>
     <div class="header-actions">
-      <a href="/for-customers.html#check-price" class="btn btn-gold">Check Price</a>
-      <a href="/portal/retailer-login" class="login-link">Retailer Login</a>
-      <a href="/portal/vendor-login" class="login-link">Vendor Login</a>
+      <a href="/sell.html" class="login-link ">Sell Your Device</a>
+      <a href="/for-retailers.html#register" class="login-link">Retailer Sign Up</a>
+      <a href="/for-buyers.html#join" class="login-link">Buyer Sign Up</a>
     </div>
     <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mobilePanel">
       <span class="visually-hidden">Menu</span>
@@ -61,14 +63,12 @@
     <a href="/how-it-works.html">How It Works</a>
     <a href="/for-customers.html">For Customers</a>
     <a href="/for-retailers.html">For Retailers</a>
-    <a href="/for-vendors.html">For Vendors</a>
+    <a href="/for-buyers.html">For Buyers</a>
     <a href="/partner.html">Partner With Us</a>
     <a href="/contact.html">Contact</a>
-    <a href="/portal/retailer-login">Retailer Login</a>
-    <a href="/portal/vendor-login">Vendor Login</a>
-    <div class="mobile-cta">
-      <a href="/for-customers.html#check-price" class="btn btn-gold btn-block">Check Price</a>
-    </div>
+    <a href="/sell.html">Sell Your Device</a>
+    <a href="/for-retailers.html#register">Retailer Sign Up</a>
+    <a href="/for-buyers.html#join">Buyer Sign Up</a>
   </div>
 </header>
 
@@ -77,7 +77,7 @@
   <div class="container">
     <div class="breadcrumb"><a href="/">Home</a> / Contact</div>
     <h1>We're here to help</h1>
-    <p>Questions about an exchange, a store registration, or a partnership &mdash; reach the TEKRIO team directly.</p>
+    <p>Questions about selling a device, a store registration, or a partnership &mdash; reach the TEKRIO team directly.</p>
   </div>
 </section>
 
@@ -87,27 +87,27 @@
       <span class="kicker">Get in touch</span>
       <h2>Contact details</h2>
       <div class="contact-info-item">
-        <span class="ico">&#9993;</span>
+        <span class="ico" aria-hidden="true">&#9993;</span>
         <div>
           <h3>Email</h3>
           <p><a href="mailto:support@tekrio.in">support@tekrio.in</a></p>
         </div>
       </div>
       <div class="contact-info-item">
-        <span class="ico">&#9679;</span>
+        <span class="ico" aria-hidden="true">&#9679;</span>
         <div>
           <h3>Office</h3>
           <p>Anabriya Technologies LLP<br>Bengaluru, Karnataka, India</p>
         </div>
       </div>
       <div class="contact-info-item">
-        <span class="ico">&#9201;</span>
+        <span class="ico" aria-hidden="true">&#9201;</span>
         <div>
           <h3>Response time</h3>
           <p>Our team typically responds within one business day.</p>
         </div>
       </div>
-      <p class="form-note">Looking for something specific? Visit <a href="/for-customers.html">For Customers</a>, <a href="/for-retailers.html">For Retailers</a>, <a href="/for-vendors.html">For Vendors</a>, or check our <a href="/faq.html">FAQ</a>.</p>
+      <p class="form-note">Looking for something specific? Visit <a href="/for-customers.html">For Customers</a>, <a href="/for-retailers.html">For Retailers</a>, <a href="/for-buyers.html">For Buyers</a>, or check our <a href="/faq.html">FAQ</a>.</p>
     </div>
     <div>
       <div class="form-card">
@@ -136,7 +136,7 @@
               <option value="">Select one</option>
               <option value="customer">Customer</option>
               <option value="retailer">Retailer</option>
-              <option value="vendor">Vendor</option>
+              <option value="vendor">Buyer</option>
               <option value="press-other">Press / Other</option>
             </select>
             <p class="field-error"></p>
@@ -162,10 +162,10 @@
       <div class="footer-brand">
         <span class="brand-mark">TEKRIO</span>
         <p class="footer-tagline">Connect. Compare. Close.</p>
-        <p>TEKRIO is a platform by Anabriya Technologies LLP that connects customers, retailers and vendors for a fair value exchange of used smartphones.</p>
+        <p>TEKRIO is a pre-owned device marketplace by Anabriya Technologies LLP, connecting customers, retailers and buyers in one transparent ecosystem.</p>
       </div>
       <div>
-        <h4>Company</h4>
+        <h2>Company</h2>
         <ul>
           <li><a href="/about.html">About Us</a></li>
           <li><a href="/how-it-works.html">How It Works</a></li>
@@ -174,16 +174,17 @@
         </ul>
       </div>
       <div>
-        <h4>For You</h4>
+        <h2>For You</h2>
         <ul>
+          <li><a href="/sell.html">Sell Your Device</a></li>
           <li><a href="/for-customers.html">For Customers</a></li>
           <li><a href="/for-retailers.html">For Retailers</a></li>
-          <li><a href="/for-vendors.html">For Vendors</a></li>
+          <li><a href="/for-buyers.html">For Buyers</a></li>
           <li><a href="/contact.html">Contact</a></li>
         </ul>
       </div>
       <div>
-        <h4>Legal</h4>
+        <h2>Legal</h2>
         <ul>
           <li><a href="/privacy-terms.html">Privacy Policy</a></li>
           <li><a href="/privacy-terms.html#terms">Terms &amp; Conditions</a></li>
@@ -199,6 +200,6 @@
   </div>
 </footer>
 
-<script src="/js/main.js" defer></script>
+<script src="/js/main.js?v=8b78e2ff" defer></script>
 </body>
 </html>

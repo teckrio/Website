@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemap.org/schemas/sitemap/0.9">
-  <url><loc>https://www.tekrio.in/</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://www.tekrio.in/about.html</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://www.tekrio.in/how-it-works.html</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://www.tekrio.in/for-customers.html</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://www.tekrio.in/for-retailers.html</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://www.tekrio.in/for-vendors.html</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://www.tekrio.in/partner.html</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://www.tekrio.in/contact.html</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://www.tekrio.in/faq.html</loc><changefreq>weekly</changefreq></url>
-  <url><loc>https://www.tekrio.in/privacy-terms.html</loc><changefreq>weekly</changefreq></url>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://www.tekrio.in/</loc><lastmod>2026-09-28</lastmod></url>
+  <url><loc>https://www.tekrio.in/about.html</loc><lastmod>2026-09-28</lastmod></url>
+  <url><loc>https://www.tekrio.in/how-it-works.html</loc><lastmod>2026-09-28</lastmod></url>
+  <url><loc>https://www.tekrio.in/sell.html</loc><lastmod>2026-09-28</lastmod></url>
+  <url><loc>https://www.tekrio.in/for-customers.html</loc><lastmod>2026-09-28</lastmod></url>
+  <url><loc>https://www.tekrio.in/for-retailers.html</loc><lastmod>2026-09-28</lastmod></url>
+  <url><loc>https://www.tekrio.in/for-buyers.html</loc><lastmod>2026-09-28</lastmod></url>
+  <url><loc>https://www.tekrio.in/partner.html</loc><lastmod>2026-09-28</lastmod></url>
+  <url><loc>https://www.tekrio.in/contact.html</loc><lastmod>2026-09-28</lastmod></url>
+  <url><loc>https://www.tekrio.in/faq.html</loc><lastmod>2026-09-28</lastmod></url>
+  <url><loc>https://www.tekrio.in/privacy-terms.html</loc><lastmod>2026-09-28</lastmod></url>
 </urlset>

@@ -6,7 +6,7 @@ const ORG_SCHEMA = `<script type="application/ld+json">
   "@type": "Organization",
   "name": "TEKRIO",
   "url": "https://www.tekrio.in",
-  "logo": "https://www.tekrio.in/images/logo.svg",
+  "logo": "https://www.tekrio.in/images/logo.png",
   "parentOrganization": {
     "@type": "Organization",
     "name": "Anabriya Technologies LLP"
@@ -26,9 +26,9 @@ module.exports = [
     file: "home.html",
     out: "index.html",
     active: "home",
-    title: "TEKRIO - Get Best Price For Your Old Phone | Used Phone Exchange Platform",
+    title: "TEKRIO - Pre-Owned Device Marketplace | Sell Your Device",
     description:
-      "Sell your old phone for the best price. TEKRIO connects you with verified vendors via trusted retailers. Instant, transparent & best value for your old smartphone.",
+      "Sell your pre-owned phone or device on TEKRIO. Get offers from verified buyers through trusted partnered stores, compare them, and choose the one you want.",
     schema: ORG_SCHEMA,
   },
   {
@@ -37,39 +37,47 @@ module.exports = [
     active: "",
     title: "About TEKRIO | Anabriya Technologies LLP",
     description:
-      "TEKRIO is a 3-sided platform connecting customers, retailers and vendors so every old phone finds its fairest price. Learn who we are and why we built TEKRIO.",
+      "TEKRIO is a pre-owned device marketplace connecting customers, retailers and buyers. Learn who we are and why we built TEKRIO.",
   },
   {
     file: "how-it-works.html",
     out: "how-it-works.html",
     active: "how",
-    title: "How TEKRIO Works - Visit, Compare, Close | TEKRIO",
+    title: "How TEKRIO Works - Select, Add Details, Get Offers | TEKRIO",
     description:
-      "See exactly how TEKRIO turns a store visit into your best possible phone exchange price in three simple, transparent steps.",
+      "Select your device, add details, get offers from verified buyers, choose an offer and complete the transaction - see how the TEKRIO marketplace works.",
+  },
+  {
+    file: "sell.html",
+    out: "sell.html",
+    active: "sell",
+    title: "Sell Your Device - Get Offers From Verified Buyers | TEKRIO",
+    description:
+      "Sell your pre-owned phone on TEKRIO. Select your device, add details, and get offers from verified buyers through a partnered store near you.",
   },
   {
     file: "for-customers.html",
     out: "for-customers.html",
     active: "customers",
-    title: "For Customers - Get The Best Price For Your Old Phone | TEKRIO",
+    title: "Sell Your Old Phone or Device for the Right Price | TEKRIO",
     description:
-      "Get the highest market value for your old phone. Multiple verified vendor offers, transparent pricing, instant payment and secure data wipe at a trusted TEKRIO retailer.",
+      "Sell your pre-owned device with offers from multiple verified buyers. Compare offers, choose one, and complete the sale at a TEKRIO partnered store.",
   },
   {
     file: "for-retailers.html",
     out: "for-retailers.html",
     active: "retailers",
-    title: "For Retailers - Earn More On Every Exchange | TEKRIO",
+    title: "For Retailers - Earn More On Every Pre-Owned Device | TEKRIO",
     description:
-      "Register your mobile store on TEKRIO. Earn commission on every old phone, drive more footfall and new-phone sales, and list a device in 30 seconds via the TEKRIO app.",
+      "Register your store on TEKRIO. Earn commission on every pre-owned device sold, bring in more customers, and let verified buyers make offers.",
   },
   {
-    file: "for-vendors.html",
-    out: "for-vendors.html",
-    active: "vendors",
-    title: "For Vendors - Verified Inventory, Pan-India Sourcing | TEKRIO",
+    file: "for-buyers.html",
+    out: "for-buyers.html",
+    active: "buyers",
+    title: "For Buyers - Source Inspected Pre-Owned Devices | TEKRIO",
     description:
-      "Access genuine, graded used-phone inventory from a pan-India retail network. Get IMEI and photo-verified listings, cut sourcing cost and time, and buy in bulk.",
+      "Source inspected pre-owned devices from partnered stores. IMEI and photo-documented listings in one marketplace feed, with less sourcing cost and time.",
   },
   {
     file: "partner.html",
@@ -77,7 +85,7 @@ module.exports = [
     active: "partner",
     title: "Become a Partner | TEKRIO Business Partnerships",
     description:
-      "Partner with TEKRIO as a retailer, vendor, or business associate and grow with India's trusted phone exchange network.",
+      "Partner with TEKRIO as a retailer, buyer, or business associate and grow with the TEKRIO pre-owned device marketplace.",
   },
   {
     file: "contact.html",
@@ -93,7 +101,7 @@ module.exports = [
     active: "",
     title: "Frequently Asked Questions | TEKRIO",
     description:
-      "Answers for customers, retailers and vendors about how TEKRIO works, pricing, payments, verification and registration.",
+      "Answers for customers, retailers and buyers about how TEKRIO works, offers, payments, verification and registration.",
   },
   {
     file: "privacy-terms.html",
