@@ -7,13 +7,12 @@ const ORG_SCHEMA = `<script type="application/ld+json">
   "name": "TEKRIO",
   "url": "https://www.tekrio.in",
   "logo": "https://www.tekrio.in/images/logo.png",
-  "parentOrganization": {
-    "@type": "Organization",
-    "name": "Anabriya Technologies LLP"
-  },
-  "email": "support@tekrio.in",
+  "email": "info@tekrio.in",
+  "telephone": ["+91-9845127927", "+91-9060805052", "+91-9035566685", "+91-9916311144"],
   "address": {
     "@type": "PostalAddress",
+    "streetAddress": "No. 1 L2/05, Sky Walk Complex, 1st Floor, Assaye Road, Ulsoor",
+    "postalCode": "560005",
     "addressLocality": "Bengaluru",
     "addressRegion": "Karnataka",
     "addressCountry": "IN"
@@ -35,7 +34,7 @@ module.exports = [
     file: "about.html",
     out: "about.html",
     active: "",
-    title: "About TEKRIO | Anabriya Technologies LLP",
+    title: "About TEKRIO | Pre-Owned Device Marketplace",
     description:
       "TEKRIO is a pre-owned device marketplace connecting customers, retailers and buyers. Learn who we are and why we built TEKRIO.",
   },
@@ -93,7 +92,7 @@ module.exports = [
     active: "contact",
     title: "Contact Us | TEKRIO",
     description:
-      "Get in touch with the TEKRIO team at Anabriya Technologies LLP. Based in Bengaluru, Karnataka. Email support@tekrio.in.",
+      "Get in touch with the TEKRIO team. Based in Bengaluru, Karnataka. Email info@tekrio.in or call us.",
   },
   {
     file: "faq.html",
@@ -109,7 +108,7 @@ module.exports = [
     active: "",
     title: "Privacy Policy & Terms and Conditions | TEKRIO",
     description:
-      "Read TEKRIO's Privacy Policy and Terms & Conditions, operated by Anabriya Technologies LLP.",
+      "Read TEKRIO's Privacy Policy and Terms & Conditions.",
   },
   {
     file: "404.html",

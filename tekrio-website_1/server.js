@@ -482,8 +482,9 @@ function renderPortalPage(kind) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${label} Login | TEKRIO</title>
-<link rel="icon" href="/images/favicon.svg" type="image/svg+xml">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/images/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="icon" href="/images/favicon-192.png" type="image/png" sizes="192x192">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css"></head>
 <body>
 <div class="container" style="max-width:520px;padding-top:80px;padding-bottom:80px;">
@@ -495,7 +496,7 @@ function renderPortalPage(kind) {
     <h2 style="margin-top:14px;">${label} login is on its way</h2>
     <p class="form-sub">OTP login for ${label.toLowerCase()}s will redirect here to the TEKRIO ${label} app once that connection is live. Until the app/API integration is complete, please use the ${label.toLowerCase()} registration form and our onboarding team will reach out with next steps and early access.</p>
     <a href="/for-${kind}s.html#${kind === "retailer" ? "register" : "join"}" class="btn btn-gold btn-block">Go to ${label} Registration</a>
-    <p class="form-note" style="margin-top:20px;">Already registered and need help? Email <a href="mailto:support@tekrio.in">support@tekrio.in</a>.</p>
+    <p class="form-note" style="margin-top:20px;">Already registered and need help? Email <a href="mailto:info@tekrio.in">info@tekrio.in</a>.</p>
   </div>
 </div>
 </body></html>`;
@@ -532,8 +533,9 @@ function renderAdminPage(leads) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TEKRIO Admin — Leads</title>
-<link rel="icon" href="/images/favicon.svg" type="image/svg+xml">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/images/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="icon" href="/images/favicon-192.png" type="image/png" sizes="192x192">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
 <style>
 table { width:100%; border-collapse: collapse; background:#fff; }
