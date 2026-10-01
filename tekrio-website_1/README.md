@@ -1,7 +1,6 @@
 # TEKRIO Website
 
-Marketing website + lead-capture backend for **TEKRIO** (www.tekrio.in), an
-initiative by **Anabriya Technologies LLP**. Built from
+Marketing website + lead-capture backend for **TEKRIO** (www.tekrio.in). Built from
 `TEKRIO_Website_Content.pdf` (the developer brief).
 
 Zero external npm dependencies — the whole server runs on Node's built-in
@@ -260,6 +259,6 @@ picks up fixes on rebuild) and serve the site only over HTTPS.
 ## Legal note
 
 `content/pages/privacy-terms.html` is a plain-language starting draft
-written for this build. Anabriya Technologies LLP should have it reviewed
+written for this build. It should be reviewed
 by legal counsel before go-live, particularly for compliance with India's
 Digital Personal Data Protection Act, 2023.

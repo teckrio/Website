@@ -6,34 +6,118 @@
   </div>
 </section>
 
-<section>
+<section class="story" data-story aria-labelledby="story-title">
   <div class="container">
-    <h2 class="visually-hidden">The five steps</h2>
-    <div class="steps steps-5">
-      <div class="step">
-        <span class="step-num">1</span>
-        <h3>Select device</h3>
-        <p>Choose whether it's an Apple or Android device and enter the model &mdash; online through <a href="/sell.html">Sell Your Device</a>, or at a partnered store.</p>
-      </div>
-      <div class="step">
-        <span class="step-num">2</span>
-        <h3>Add details</h3>
-        <p>Share storage, RAM, condition and accessories. A partnered store then inspects the device and records photos and IMEI.</p>
-      </div>
-      <div class="step">
-        <span class="step-num">3</span>
-        <h3>Get offers</h3>
-        <p>The inspected device is listed on the TEKRIO marketplace feed, where verified buyers make their offers.</p>
-      </div>
-      <div class="step">
-        <span class="step-num">4</span>
-        <h3>Choose offer</h3>
-        <p>See every buyer offer side by side and choose the one you want. You're under no obligation to accept.</p>
-      </div>
-      <div class="step">
-        <span class="step-num">5</span>
-        <h3>Complete transaction</h3>
-        <p>Confirm the sale at the partnered store, hand over your device and get paid.</p>
+    <div class="section-head center mx-auto">
+      <span class="kicker">Step by step</span>
+      <h2 id="story-title">Five steps from your drawer to paid</h2>
+      <p>Scroll to follow one device through the TEKRIO marketplace.</p>
+    </div>
+
+    <div class="story-grid">
+      <ol class="story-steps">
+        <li class="story-step is-active">
+          <span class="story-num">Step 1</span>
+          <h3>Select device</h3>
+          <p>Choose whether it's an Apple or Android device and enter the model &mdash; online through <a href="/sell.html">Sell Your Device</a>, or at a partnered store.</p>
+        </li>
+        <li class="story-step">
+          <span class="story-num">Step 2</span>
+          <h3>Add details</h3>
+          <p>Share storage, RAM, condition and accessories. A partnered store then inspects the device and records photos and IMEI.</p>
+        </li>
+        <li class="story-step">
+          <span class="story-num">Step 3</span>
+          <h3>Get offers</h3>
+          <p>The inspected device is listed on the TEKRIO marketplace feed, where verified buyers make their offers.</p>
+        </li>
+        <li class="story-step">
+          <span class="story-num">Step 4</span>
+          <h3>Choose offer</h3>
+          <p>See every buyer offer side by side and choose the one you want. You're under no obligation to accept.</p>
+        </li>
+        <li class="story-step">
+          <span class="story-num">Step 5</span>
+          <h3>Complete transaction</h3>
+          <p>Confirm the sale at the partnered store, hand over your device and get paid.</p>
+        </li>
+      </ol>
+
+      <!-- Sticky phone. Decorative: the steps above carry all the content. -->
+      <div class="story-stage" aria-hidden="true">
+        <div class="story-rail"><span class="story-rail-fill"></span></div>
+        <div class="story-phone">
+          <div class="story-notch"></div>
+          <div class="story-screens">
+
+            <div class="story-screen is-active">
+              <div class="ss-top"><span class="ss-kicker">Sell your device</span><strong>Select your device</strong></div>
+              <div class="ss-body">
+                <span class="ss-label">Device type</span>
+                <div class="ss-choices ss-anim">
+                  <span class="ss-choice is-on">Apple</span>
+                  <span class="ss-choice">Android</span>
+                </div>
+                <span class="ss-label">Model</span>
+                <div class="ss-input ss-anim">iPhone 13<span class="ss-caret"></span></div>
+                <div class="ss-device ss-anim">
+                  <span class="ss-thumb"></span>
+                  <span><strong>iPhone 13</strong><small>Apple &middot; 128 GB</small></span>
+                </div>
+              </div>
+              <span class="ss-btn ss-anim">Continue</span>
+            </div>
+
+            <div class="story-screen">
+              <div class="ss-top"><span class="ss-kicker">iPhone 13</span><strong>Add details</strong></div>
+              <div class="ss-body">
+                <div class="ss-row ss-anim"><span>Storage</span><b>128 GB</b></div>
+                <div class="ss-row ss-anim"><span>Battery health</span><b>87%</b></div>
+                <div class="ss-row ss-anim"><span>Screen</span><b>No scratches</b></div>
+                <div class="ss-tags ss-anim"><span>Box</span><span>Bill</span><span>Charger</span></div>
+                <span class="ss-label">Store inspection</span>
+                <div class="ss-photos ss-anim"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+                <div class="ss-note ss-anim">IMEI recorded &middot; 6 photos</div>
+              </div>
+            </div>
+
+            <div class="story-screen">
+              <div class="ss-top"><span class="ss-live">Live on marketplace</span><strong>Getting offers</strong></div>
+              <div class="ss-body">
+                <div class="ss-timer ss-anim"><small>Offers close in</small><b>02:41</b></div>
+                <div class="ss-offer ss-anim"><span><strong>Verified buyer</strong><small>Offer 1</small></span><b>&#8377;31,500</b></div>
+                <div class="ss-offer ss-anim"><span><strong>Verified buyer</strong><small>Offer 2</small></span><b>&#8377;32,800</b></div>
+                <div class="ss-offer ss-anim"><span><strong>Verified buyer</strong><small>Offer 3</small></span><b>&#8377;33,200</b></div>
+              </div>
+            </div>
+
+            <div class="story-screen">
+              <div class="ss-top"><span class="ss-kicker">3 offers</span><strong>Choose an offer</strong></div>
+              <div class="ss-body">
+                <div class="ss-offer is-best ss-anim"><span><strong>Verified buyer</strong><small>Highest offer</small></span><b>&#8377;33,200</b></div>
+                <div class="ss-offer ss-anim"><span><strong>Verified buyer</strong><small>Offer 2</small></span><b>&#8377;32,800</b></div>
+                <div class="ss-offer ss-anim"><span><strong>Verified buyer</strong><small>Offer 1</small></span><b>&#8377;31,500</b></div>
+                <div class="ss-note ss-anim">No obligation to accept</div>
+              </div>
+              <span class="ss-btn ss-anim">Accept &#8377;33,200</span>
+            </div>
+
+            <div class="story-screen">
+              <div class="ss-body ss-done">
+                <span class="ss-check ss-anim"><svg viewBox="0 0 24 24" width="30" height="30"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                <small class="ss-anim">Payment sent</small>
+                <strong class="ss-paid ss-anim">&#8377;33,200</strong>
+                <div class="ss-steps ss-anim">
+                  <span><i></i>Sale confirmed at store</span>
+                  <span><i></i>Device handed over</span>
+                  <span><i></i>Paid to you</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+        <div class="story-dots"><i class="is-active"></i><i></i><i></i><i></i><i></i></div>
       </div>
     </div>
   </div>
@@ -78,9 +162,11 @@
     <h2>Ready to sell your pre-owned device?</h2>
     <p>Join the TEKRIO marketplace as a customer, retailer or buyer.</p>
     <div class="cta-row">
-      <a href="/sell.html" class="btn btn-gold">Sell Your Device</a>
+      <a href="/sell.html" class="btn btn-outline-light">Sell Your Device</a>
       <a href="/for-retailers.html#register" class="btn btn-outline-light">Register Your Store</a>
       <a href="/for-buyers.html#join" class="btn btn-outline-light">Join as Buyer</a>
     </div>
   </div>
 </section>
+
+<script src="/js/how-it-works.js" defer></script>
