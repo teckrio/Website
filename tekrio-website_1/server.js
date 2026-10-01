@@ -418,11 +418,7 @@ function serveStatic(req, res, urlPath) {
     // "/about" -> 301 to "/about.html", so each page has one URL
     fs.stat(filePath + ".html", (err2, stat2) => {
       if (err2 || !stat2.isFile()) return serve404(res);
-      // build the target from the resolved file, never from the raw URL,
-      // so a path like "//about" can't become a redirect to another host
-      const target = "/" + path.relative(PUBLIC_DIR, filePath).split(path.sep).join("/") + ".html";
-      res.writeHead(301, { Location: target });
-      res.end();
+      return sendFile(req, res, filePath + ".html", stat2);
     });
   });
 }
@@ -695,8 +691,8 @@ const server = http.createServer(async (req, res) => {
     // ---- renamed pages (Vendor -> Buyer); keep old links working ----
     const MOVED = {
       "/portal/vendor-login": "/portal/buyer-login",
-      "/for-vendors.html": "/for-buyers.html",
-      "/for-vendors": "/for-buyers.html",
+      "/for-vendors.html": "/for-buyers",
+      "/for-vendors": "/for-buyers",
     };
     if (MOVED[pathname]) {
       res.writeHead(301, { Location: MOVED[pathname] });
