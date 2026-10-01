@@ -398,7 +398,16 @@ function sendFile(req, res, filePath, stat) {
 // ---------------------------------------------------------------------
 // static file serving (with basic path traversal protection)
 // ---------------------------------------------------------------------
+// Pages are served at clean URLs: "/about" serves public/about.html, and
+// any request for "/about.html" (or "/index.html") is 301-redirected to
+// the clean form, so each page has exactly one URL and ".html" never shows.
+function redirect(res, location) {
+  res.writeHead(301, { Location: location });
+  res.end();
+}
+
 function serveStatic(req, res, urlPath) {
+  const search = new URL(req.url, "http://localhost").search; // keep ?utm=… on redirects
   let rel;
   try {
     rel = decodeURIComponent(urlPath.split("?")[0]);
@@ -406,21 +415,53 @@ function serveStatic(req, res, urlPath) {
     return serve404(res); // malformed %-escape
   }
   if (rel.includes("\0")) return serve404(res);
-  if (rel === "/") rel = "/index.html";
+
+  // "/index.html" -> "/", "/blog/index.html" -> "/blog/"
+  if (/\/index\.html$/i.test(rel)) {
+    return redirect(res, urlPath.replace(/index\.html$/i, "") + search);
+  }
+  // "/about.html" -> "/about" (404.html is internal; let it 404 normally)
+  if (/\.html$/i.test(rel) && !/^\/404\.html$/i.test(rel)) {
+    return redirect(res, urlPath.replace(/\.html$/i, "") + search);
+  }
+
   const filePath = path.normalize(path.join(PUBLIC_DIR, rel));
   // require the separator so a sibling like "public-old/" can't match
-  if (!filePath.startsWith(PUBLIC_DIR + path.sep)) {
+  // (PUBLIC_DIR itself is allowed: that's the "/" request)
+  if (filePath !== PUBLIC_DIR + path.sep && !filePath.startsWith(PUBLIC_DIR + path.sep)) {
     res.writeHead(403);
     return res.end("Forbidden");
   }
+
   fs.stat(filePath, (err, stat) => {
+    // real asset file (css, js, images, sitemap.xml, …)
     if (!err && stat.isFile()) return sendFile(req, res, filePath, stat);
-    // "/about" -> 301 to "/about.html", so each page has one URL
-    fs.stat(filePath + ".html", (err2, stat2) => {
-      if (err2 || !stat2.isFile()) return serve404(res);
-      return sendFile(req, res, filePath + ".html", stat2);
-    });
+
+    // directory: serve its index.html, adding the trailing slash if missing
+    if (!err && stat.isDirectory()) {
+      const indexPath = path.join(filePath, "index.html");
+      return fs.stat(indexPath, (errI, statI) => {
+        if (errI || !statI.isFile()) return tryHtml();
+        if (!rel.endsWith("/")) return redirect(res, urlPath + "/" + search);
+        return sendFile(req, res, indexPath, statI);
+      });
+    }
+    return tryHtml();
   });
+
+  // "/about" -> public/about.html; "/about/" -> 301 to "/about"
+  function tryHtml() {
+    const trimmed = rel.length > 1 && rel.endsWith("/");
+    const base = trimmed
+      ? path.normalize(path.join(PUBLIC_DIR, rel.slice(0, -1)))
+      : filePath;
+    if (!base.startsWith(PUBLIC_DIR + path.sep)) return serve404(res);
+    fs.stat(base + ".html", (err2, stat2) => {
+      if (err2 || !stat2.isFile()) return serve404(res);
+      if (trimmed) return redirect(res, urlPath.slice(0, -1) + search);
+      return sendFile(req, res, base + ".html", stat2);
+    });
+  }
 }
 
 function serve404(res) {
@@ -491,7 +532,7 @@ function renderPortalPage(kind) {
     <span class="pending-badge">Pending app/API connection</span>
     <h2 style="margin-top:14px;">${label} login is on its way</h2>
     <p class="form-sub">OTP login for ${label.toLowerCase()}s will redirect here to the TEKRIO ${label} app once that connection is live. Until the app/API integration is complete, please use the ${label.toLowerCase()} registration form and our onboarding team will reach out with next steps and early access.</p>
-    <a href="/for-${kind}s.html#${kind === "retailer" ? "register" : "join"}" class="btn btn-gold btn-block">Go to ${label} Registration</a>
+    <a href="/for-${kind}s#${kind === "retailer" ? "register" : "join"}" class="btn btn-gold btn-block">Go to ${label} Registration</a>
     <p class="form-note" style="margin-top:20px;">Already registered and need help? Email <a href="mailto:info@tekrio.in">info@tekrio.in</a>.</p>
   </div>
 </div>
@@ -691,7 +732,7 @@ const server = http.createServer(async (req, res) => {
     // ---- renamed pages (Vendor -> Buyer); keep old links working ----
     const MOVED = {
       "/portal/vendor-login": "/portal/buyer-login",
-      "/for-vendors.html": "/for-buyers",
+      "/for-vendors.html": "/for-buyers", // must stay above the generic .html redirect
       "/for-vendors": "/for-buyers",
     };
     if (MOVED[pathname]) {
