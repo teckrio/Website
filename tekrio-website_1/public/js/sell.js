@@ -53,12 +53,16 @@
     .catch(function () { applyCatalog(FALLBACK); });
 
   // ---------- platform-specific fields ----------
-  form.querySelectorAll('input[name="platform"]').forEach(function (radio) {
-    radio.addEventListener("change", function () {
-      var android = radio.value === "android";
-      form.querySelectorAll("[data-android-only]").forEach(function (el) { el.hidden = !android; });
-      form.elements.model.placeholder = android ? "e.g. Galaxy S22" : "e.g. iPhone 13";
-    });
+  // The brand decides the platform: Apple is an iPhone, every other brand
+  // is Android. RAM is asked for Android only, battery health for iPhone only.
+  form.elements.brand.addEventListener("change", function () {
+    var brand = form.elements.brand.value;
+    var platform = !brand ? "" : brand === "Apple" ? "apple" : "android";
+    form.elements.platform.value = platform;
+    form.querySelectorAll("[data-android-only]").forEach(function (el) { el.hidden = platform !== "android"; });
+    form.querySelectorAll("[data-apple-only]").forEach(function (el) { el.hidden = platform !== "apple"; });
+    form.elements.model.placeholder =
+      platform === "apple" ? "e.g. iPhone 13" : platform === "android" ? "e.g. Galaxy S22" : "e.g. iPhone 13 or Galaxy S22";
   });
 
   // ---------- validation ----------
@@ -156,7 +160,12 @@
     var payload = {};
     new FormData(form).forEach(function (value, key) { payload[key] = value; });
     if (payload._hp) return;
-    if (payload.platform === "apple") payload.brand = "Apple";
+    // the visitor may have switched platform: drop the other one's fields
+    if (payload.platform === "apple") {
+      delete payload.ram;
+    } else {
+      delete payload.batteryHealth;
+    }
     ["box", "bill", "charger"].forEach(function (k) { payload[k] = payload[k] ? "Yes" : "No"; });
 
     var submitBtn = form.querySelector('button[type="submit"]');

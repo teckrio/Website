@@ -20,22 +20,16 @@
       <form id="sellForm" novalidate>
         <input type="text" name="_hp" class="visually-hidden" tabindex="-1" autocomplete="off">
         <input type="hidden" name="catalogVersion">
+        <input type="hidden" name="platform">
 
         <!-- Step 1: Select Device -->
         <fieldset class="sell-step" data-step="1">
-          <legend><h2>Select your device</h2></legend>
+          <legend><span class="step-count">Step 1 of 5</span><h2>Select your device</h2></legend>
           <div class="field" data-field>
-            <span class="field-label">Device type</span>
-            <div class="choice-row" role="radiogroup" aria-label="Device type">
-              <label class="choice"><input type="radio" name="platform" value="apple" required><span>Apple (iPhone)</span></label>
-              <label class="choice"><input type="radio" name="platform" value="android" required><span>Android</span></label>
-            </div>
-            <p class="field-error"></p>
-          </div>
-          <div class="field" data-field data-android-only hidden>
             <label for="s-brand">Brand</label>
             <select id="s-brand" name="brand" required>
               <option value="">Select brand</option>
+              <option value="Apple">Apple (iPhone)</option>
               <option>Samsung</option>
               <option>OnePlus</option>
               <option>Xiaomi / Redmi</option>
@@ -46,7 +40,7 @@
               <option>Motorola</option>
               <option>Nothing</option>
               <option>iQOO</option>
-              <option>Other</option>
+              <option value="Other">Other Android</option>
             </select>
             <p class="field-error"></p>
           </div>
@@ -54,6 +48,18 @@
             <label for="s-model">Model</label>
             <input id="s-model" name="model" type="text" required placeholder="e.g. iPhone 13 or Galaxy S22">
             <p class="field-error"></p>
+          </div>
+          <div class="field-pair">
+            <div class="field" data-field>
+              <label for="s-storage">Storage</label>
+              <select id="s-storage" name="storage" required data-catalog-list="storages"><option value="">Select storage</option></select>
+              <p class="field-error"></p>
+            </div>
+            <div class="field" data-field data-android-only hidden>
+              <label for="s-ram">RAM</label>
+              <select id="s-ram" name="ram" required data-catalog-list="rams"><option value="">Select RAM</option></select>
+              <p class="field-error"></p>
+            </div>
           </div>
           <div class="sell-nav">
             <span></span>
@@ -63,19 +69,7 @@
 
         <!-- Step 2: Add Details -->
         <fieldset class="sell-step" data-step="2" hidden>
-          <legend><h2>Add device details</h2></legend>
-          <div class="field-pair">
-            <div class="field" data-field>
-              <label for="s-storage">Storage</label>
-              <select id="s-storage" name="storage" required data-catalog-list="storages"><option value="">Select</option></select>
-              <p class="field-error"></p>
-            </div>
-            <div class="field" data-field>
-              <label for="s-ram">RAM <span class="opt">(optional)</span></label>
-              <select id="s-ram" name="ram" data-catalog-list="rams"><option value="">Not sure</option></select>
-              <p class="field-error"></p>
-            </div>
-          </div>
+          <legend><span class="step-count">Step 2 of 5</span><h2>Add device details</h2></legend>
           <div class="field" data-field>
             <label for="s-screen">Screen condition</label>
             <select id="s-screen" name="screenDamage" required data-catalog-field="screenDamage"><option value="">Select</option></select>
@@ -92,7 +86,7 @@
               <select id="s-age" name="deviceAge" required data-catalog-field="deviceAge"><option value="">Select</option></select>
               <p class="field-error"></p>
             </div>
-            <div class="field" data-field data-rule="battery">
+            <div class="field" data-field data-rule="battery" data-apple-only hidden>
               <label for="s-battery">Battery health % <span class="opt">(optional)</span></label>
               <input id="s-battery" name="batteryHealth" type="text" inputmode="numeric" maxlength="3" placeholder="e.g. 87">
               <p class="field-error"></p>
@@ -114,7 +108,7 @@
 
         <!-- Step 3: Get Offers -->
         <fieldset class="sell-step" data-step="3" hidden>
-          <legend><h2>Where should we connect you?</h2></legend>
+          <legend><span class="step-count">Step 3 of 5</span><h2>Where should we connect you?</h2></legend>
           <p class="form-sub">We'll match you with a partnered store near you to verify the device and open it for buyer offers.</p>
           <div class="field" data-field data-rule="text">
             <label for="s-name">Full name</label>
@@ -124,6 +118,11 @@
           <div class="field" data-field data-rule="mobile">
             <label for="s-mobile">Mobile number</label>
             <input id="s-mobile" name="mobile" type="tel" inputmode="numeric" maxlength="10" required autocomplete="tel">
+            <p class="field-error"></p>
+          </div>
+          <div class="field" data-field>
+            <label for="s-address">Full address</label>
+            <textarea id="s-address" name="address" rows="3" required autocomplete="street-address" placeholder="House / flat no., street, area, landmark"></textarea>
             <p class="field-error"></p>
           </div>
           <div class="field-pair">
