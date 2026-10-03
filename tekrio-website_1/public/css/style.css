@@ -15,6 +15,7 @@
   --gold-light: #FFF4DF;  /* amber tint for notes / pending */
   --verified: #166534;    /* reserved: verification marks */
   --verified-tint: #EAF7EF;
+  --teal-tint: #F3EEFB;   /* selected choice background */
   --slate: #526079;       /* secondary text on light */
   --slate-on-dark: #ADB9D1;
   --line: #DCE2EE;        /* hairline on light */
@@ -569,12 +570,22 @@ section { padding: 88px 0; }
   background: var(--white);
   color: var(--ink);
 }
+/* inputs and dropdowns share one height, and dropdowns drop the browser's
+   own styling (which sizes them differently) for a matching custom arrow */
+.field input:not([type="checkbox"]):not([type="radio"]), .field select { height: 48px; }
+.field select {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 40px;
+  background: var(--white) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23526079' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") right 14px center / 12px no-repeat;
+  cursor: pointer;
+}
 .field input:focus, .field select:focus, .field textarea:focus {
   border-color: var(--teal);
   outline: none;
 }
 .field-error { color: var(--danger); font-size: 0.82rem; margin-top: 6px; display: none; }
-.field.invalid input, .field.invalid select { border-color: var(--danger); }
+.field.invalid input, .field.invalid select, .field.invalid textarea { border-color: var(--danger); }
 .field.invalid .field-error { display: block; }
 .form-note { font-size: 0.82rem; color: var(--slate); margin-top: 14px; }
 .form-status {
@@ -684,9 +695,20 @@ section { padding: 88px 0; }
 .sell-step { border: 0; margin: 0; padding: 0; min-width: 0; }
 .sell-step legend { padding: 0; margin-bottom: 18px; }
 .sell-step legend h2 { margin: 0; font-size: clamp(1.4rem, 2.4vw, 1.8rem); }
+.step-count {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--teal);
+}
 .field-label { display: block; font-size: 0.86rem; font-weight: 600; margin-bottom: 6px; }
 .field-pair { display: grid; gap: 0 16px; }
 @media (min-width: 560px) { .field-pair { grid-template-columns: 1fr 1fr; } }
+/* one of the pair hidden (e.g. RAM for iPhone): the other takes the full row */
+.field-pair:has(> .field[hidden]) > .field { grid-column: 1 / -1; }
 .choice-row { display: flex; flex-wrap: wrap; gap: 10px; }
 .choice { position: relative; cursor: pointer; }
 .choice input { position: absolute; opacity: 0; width: 1px; height: 1px; }
@@ -698,7 +720,7 @@ section { padding: 88px 0; }
   font-size: 0.95rem;
   background: var(--white);
 }
-.choice input:checked + span { border-color: var(--teal); background: var(--verified-tint); color: var(--teal-deep); font-weight: 600; }
+.choice input:checked + span { border-color: var(--teal); background: var(--teal-tint); color: var(--teal-deep); font-weight: 600; }
 .choice input:focus-visible + span { outline: 3px solid var(--teal); outline-offset: 2px; }
 .field.invalid .choice span { border-color: var(--danger); }
 .sell-nav { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; }

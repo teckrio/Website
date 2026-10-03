@@ -147,7 +147,7 @@ const SCHEMAS = {
     optional: [],
   },
   sell: {
-    required: ["platform", "brand", "model", "storage", "name", "mobile", "city", "pincode"],
+    required: ["platform", "brand", "model", "storage", "name", "mobile", "address", "city", "pincode"],
     optional: [
       "ram", "batteryHealth", "screenDamage", "bodyScratches", "deviceAge",
       "box", "bill", "charger", "catalogVersion",
@@ -194,6 +194,9 @@ function validateLead(type, body) {
     if (!["apple", "android"].includes(body.platform)) {
       return { ok: false, message: "Select Apple or Android." };
     }
+    if (body.platform === "android" && !String(body.ram || "").trim()) {
+      return { ok: false, message: "Missing required field: ram." };
+    }
     if (!/^[1-9]\d{5}$/.test(String(body.pincode).trim())) {
       return { ok: false, message: "Enter a valid 6-digit pincode." };
     }
@@ -207,7 +210,8 @@ function validateLead(type, body) {
     const v = body[f];
     if (v === undefined || v === null) return;
     if (typeof v === "object") return; // only plain values are accepted
-    clean[f] = String(v).trim().slice(0, f === "message" ? 2000 : 200);
+    const maxLength = { message: 2000, address: 500 }[f] || 200;
+    clean[f] = String(v).trim().slice(0, maxLength);
   });
   return { ok: true, data: clean };
 }
@@ -539,22 +543,110 @@ function renderPortalPage(kind) {
 </body></html>`;
 }
 
+// leads saved before the reference was stored get the same one from their id
+function leadReference(lead) {
+  return lead.reference || String(lead.id).slice(0, 8).toUpperCase();
+}
+const LEAD_TYPE_NAMES = {
+  sell: "Sell request",
+  retailer: "Retailer",
+  vendor: "Buyer",
+  partner: "Partner",
+  contact: "Contact",
+  customer: "Customer",
+};
+// lead field -> label in the Details column, in display order
+const LEAD_FIELD_LABELS = {
+  ownerName: "Owner",
+  company: "Company",
+  email: "Email",
+  address: "Address",
+  pincode: "Pincode",
+  gst: "GST",
+  gstOrPan: "GST / PAN",
+  partnershipType: "Partnership type",
+  topic: "Topic",
+  message: "Message",
+};
+// sell-request device fields, shown when the Device cell is clicked
+const DEVICE_FIELD_LABELS = {
+  platform: "Platform",
+  brand: "Brand",
+  model: "Model",
+  storage: "Storage",
+  ram: "RAM",
+  batteryHealth: "Battery health",
+  screenDamage: "Screen condition",
+  bodyScratches: "Body condition",
+  deviceAge: "Device age",
+  box: "Box",
+  bill: "Bill",
+  charger: "Charger",
+};
+const PLATFORM_NAMES = { apple: "Apple (iPhone)", android: "Android" };
+// fields with their own column, or not meant for the table
+const LEAD_TABLE_SKIP = new Set([
+  "id", "reference", "type", "createdAt", "ip", "name", "storeName", "businessName",
+  "mobile", "city", "catalogVersion", "device", ...Object.keys(DEVICE_FIELD_LABELS),
+]);
+// Device cell: a one-line summary that opens to every device field. The old
+// customer form only collected a free-text device name, shown as-is.
+function deviceCell(lead) {
+  const fields = Object.keys(DEVICE_FIELD_LABELS).filter((k) => lead[k]);
+  if (!fields.length) return escapeHtml(lead.device || "");
+  const summary = [[lead.brand, lead.model].filter(Boolean).join(" "), lead.storage].filter(Boolean).join(" · ");
+  const value = (k) =>
+    k === "platform" ? PLATFORM_NAMES[lead[k]] || lead[k] : k === "batteryHealth" ? `${lead[k]}%` : lead[k];
+  const rows = fields
+    .map((k) => `<dt>${escapeHtml(DEVICE_FIELD_LABELS[k])}</dt><dd>${escapeHtml(value(k))}</dd>`)
+    .join("");
+  return `<details class="device"><summary>${escapeHtml(summary || "View device")}</summary><dl>${rows}</dl></details>`;
+}
+// the admin script's URL changes with its contents, so browsers never run a stale copy
+let adminScriptVersion = null;
+function adminScriptUrl() {
+  if (!adminScriptVersion) {
+    const file = fs.readFileSync(path.join(PUBLIC_DIR, "js", "admin.js"));
+    adminScriptVersion = crypto.createHash("sha256").update(file).digest("hex").slice(0, 8);
+  }
+  return `/js/admin.js?v=${adminScriptVersion}`;
+}
+
 // ---------------------------------------------------------------------
-// admin dashboard (basic-auth protected, read-only view of leads.json)
+// admin dashboard (basic-auth protected, read-only view of leads.json).
+// Every lead is in the HTML; public/js/admin.js adds search, a type filter
+// and sorting on top, all in the browser.
 // ---------------------------------------------------------------------
 function renderAdminPage(leads) {
+  const typeName = (type) => LEAD_TYPE_NAMES[type] || type;
   const rows = leads
     .slice()
     .reverse()
     .map((l) => {
-      const fields = Object.keys(l)
-        .filter((k) => !["id", "type", "createdAt", "ip"].includes(k))
-        .map((k) => `<strong>${escapeHtml(k)}:</strong> ${escapeHtml(l[k])}`)
-        .join("<br>");
-      return `<tr>
-        <td>${escapeHtml(new Date(l.createdAt).toLocaleString("en-IN"))}</td>
-        <td><span class="pill">${escapeHtml(l.type)}</span></td>
-        <td>${fields}</td>
+      const name = l.name || l.storeName || l.businessName || "";
+      const time = Date.parse(l.createdAt) || 0;
+      const received = new Date(time).toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        dateStyle: "medium",
+        timeStyle: "short",
+      });
+      const extraKeys = Object.keys(l).filter((k) => !(k in LEAD_FIELD_LABELS));
+      const details = [...Object.keys(LEAD_FIELD_LABELS), ...extraKeys]
+        .filter((k) => l[k] !== undefined && l[k] !== "" && !LEAD_TABLE_SKIP.has(k))
+        .map((k) => `<span class="detail"><strong>${escapeHtml(LEAD_FIELD_LABELS[k] || k)}:</strong> ${escapeHtml(l[k])}</span>`)
+        .join("");
+      const searchText = [leadReference(l), typeName(l.type), received, ...Object.values(l)]
+        .join(" ")
+        .toLowerCase();
+      return `<tr data-type="${escapeHtml(l.type)}" data-time="${time}" data-name="${escapeHtml(name)}" data-city="${escapeHtml(l.city || "")}" data-search="${escapeHtml(searchText)}">
+        <td class="nowrap muted">${escapeHtml(received)}</td>
+        <td class="nowrap"><code>${escapeHtml(leadReference(l))}</code></td>
+        <td><span class="pill">${escapeHtml(typeName(l.type))}</span></td>
+        <td>${escapeHtml(name)}</td>
+        <td class="nowrap">${l.mobile ? `<a href="tel:+91${escapeHtml(l.mobile)}">${escapeHtml(l.mobile)}</a>` : ""}</td>
+        <td>${escapeHtml(l.city || "")}</td>
+        <td>${deviceCell(l)}</td>
+        <td class="details">${details}</td>
       </tr>`;
     })
     .join("\n");
@@ -563,8 +655,15 @@ function renderAdminPage(leads) {
     acc[l.type] = (acc[l.type] || 0) + 1;
     return acc;
   }, {});
-  const countCards = Object.entries(counts)
-    .map(([type, n]) => `<div class="stat"><span class="num">${n}</span><span class="label">${escapeHtml(type)}</span></div>`)
+  const types = [
+    ...Object.keys(LEAD_TYPE_NAMES).filter((t) => counts[t]),
+    ...Object.keys(counts).filter((t) => !(t in LEAD_TYPE_NAMES)),
+  ];
+  const countCards = types
+    .map((t) => `<div class="stat"><span class="num">${counts[t]}</span><span class="label">${escapeHtml(typeName(t))}</span></div>`)
+    .join("");
+  const typeOptions = types
+    .map((t) => `<option value="${escapeHtml(t)}">${escapeHtml(typeName(t))} (${counts[t]})</option>`)
     .join("");
 
   return `<!doctype html><html lang="en"><head><meta charset="utf-8">
@@ -574,23 +673,67 @@ function renderAdminPage(leads) {
 <link rel="icon" href="/images/favicon-192.png" type="image/png" sizes="192x192">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
+<script src="${adminScriptUrl()}" defer></script>
 <style>
-table { width:100%; border-collapse: collapse; background:#fff; }
-td { border-bottom:1px solid var(--line); padding:14px 12px; vertical-align:top; font-size:0.9rem; }
-td:first-child { white-space:nowrap; color:var(--slate); font-size:0.82rem; }
+.table-wrap { overflow-x:auto; border:1px solid var(--line); border-radius:var(--radius-s); background:#fff; }
+table { width:100%; border-collapse: collapse; }
+th, td { border-bottom:1px solid var(--line); padding:12px; vertical-align:top; font-size:0.9rem; text-align:left; }
+th { font-size:0.8rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--slate); background:var(--paper); }
+tbody tr:last-child td { border-bottom:0; }
+.nowrap { white-space:nowrap; }
+.muted { color:var(--slate); font-size:0.82rem; }
+.details { min-width:260px; }
+.details .detail { display:block; }
+details.device { min-width:240px; }
+td .pill { white-space:nowrap; }
+details.device summary { cursor:pointer; color:var(--teal); font-weight:600; }
+details.device summary:hover { text-decoration:underline; }
+details.device dl { display:grid; grid-template-columns:auto 1fr; gap:4px 12px; margin:10px 0 0; padding:10px 12px; background:var(--paper); border-radius:var(--radius-s); }
+details.device dt { color:var(--slate); white-space:nowrap; }
+details.device dd { margin:0; }
 .two-col.stats-row { grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); margin-bottom:32px; }
+.lead-controls { display:grid; gap:12px; margin-bottom:12px; }
+@media (min-width: 760px) { .lead-controls { grid-template-columns: 2fr 1fr 1fr; } }
+.lead-controls label { display:block; font-size:0.8rem; font-weight:600; margin-bottom:4px; }
+.lead-controls input, .lead-controls select { width:100%; padding:10px 12px; border:1.5px solid var(--line); border-radius:var(--radius-s); font:inherit; font-size:0.95rem; background:#fff; }
+.lead-controls input:focus, .lead-controls select:focus { border-color:var(--teal); outline:none; }
+.lead-count { font-size:0.85rem; margin:0 0 12px; }
 </style>
 </head>
 <body>
 <div class="container" style="padding-top:48px;padding-bottom:64px;">
   <a href="/" class="brand" style="color:var(--ink);margin-bottom:20px;display:inline-flex;"><span class="brand-mark" style="color:var(--ink);">TEKRIO</span></a>
   <h1 style="font-size:1.8rem;">Admin — Captured Leads</h1>
-  <p>Total leads: <strong>${leads.length}</strong>. This is a lightweight built-in view; leads also queue for the TEKRIO app/API sync once that connection is configured (see README.md).</p>
+  <p>Total leads: <strong>${leads.length}</strong>. Raw data: <a href="/api/admin/leads">/api/admin/leads</a>.</p>
   <div class="two-col stats-row">${countCards || "<p>No leads yet.</p>"}</div>
-  <table>
-    <thead><tr><td><strong>Received</strong></td><td><strong>Type</strong></td><td><strong>Details</strong></td></tr></thead>
-    <tbody>${rows || '<tr><td colspan="3">No submissions yet.</td></tr>'}</tbody>
-  </table>
+  <div class="lead-controls" id="leadControls" hidden>
+    <div>
+      <label for="leadSearch">Search</label>
+      <input id="leadSearch" type="search" placeholder="Name, mobile, reference, model, city…" autocomplete="off">
+    </div>
+    <div>
+      <label for="leadType">Type</label>
+      <select id="leadType"><option value="">All types (${leads.length})</option>${typeOptions}</select>
+    </div>
+    <div>
+      <label for="leadSort">Sort</label>
+      <select id="leadSort">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="name-az">Name A–Z</option>
+        <option value="name-za">Name Z–A</option>
+        <option value="city-az">City A–Z</option>
+      </select>
+    </div>
+  </div>
+  <p class="lead-count" id="leadCount" role="status"></p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Received (IST)</th><th>Reference</th><th>Type</th><th>Name</th><th>Mobile</th><th>City</th><th>Device</th><th>Details</th></tr></thead>
+      <tbody id="leadRows">${rows || '<tr><td colspan="8">No submissions yet.</td></tr>'}</tbody>
+    </table>
+  </div>
+  <p id="leadEmpty" hidden style="margin-top:16px;">No leads match your search.</p>
 </div>
 </body></html>`;
 }
@@ -661,8 +804,10 @@ const server = http.createServer(async (req, res) => {
       if (!result.ok) {
         return sendJson(res, 400, { message: result.message });
       }
+      const id = crypto.randomUUID();
       const record = {
-        id: crypto.randomUUID(),
+        id,
+        reference: leadReference({ id }), // shown to the visitor after submitting
         type,
         ...result.data,
         createdAt: new Date().toISOString(),
@@ -677,7 +822,7 @@ const server = http.createServer(async (req, res) => {
       forwardToAppApi(record); // no-op until APP_API_WEBHOOK_URL is configured
       return sendJson(res, 200, {
         message: "Thanks! Our team will reach out shortly.",
-        reference: record.id.slice(0, 8).toUpperCase(),
+        reference: record.reference,
       });
     }
 
