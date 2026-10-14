@@ -27,7 +27,7 @@ module.exports = [
     active: "home",
     title: "TEKRIO - Pre-Owned Device Marketplace | Sell Your Device",
     description:
-      "Sell your pre-owned phone or device on TEKRIO. Get offers from verified buyers through trusted partnered stores, compare them, and choose the one you want.",
+      "Sell your pre-owned phone or device on TEKRIO. Verified buyers make offers through trusted partnered stores, and you get the highest offer.",
     schema: ORG_SCHEMA,
   },
   {
@@ -44,7 +44,7 @@ module.exports = [
     active: "how",
     title: "How TEKRIO Works - Select, Add Details, Get Offers | TEKRIO",
     description:
-      "Select your device, add details, get offers from verified buyers, choose an offer and complete the transaction - see how the TEKRIO marketplace works.",
+      "Select your device, add details, let verified buyers make offers, get your best offer and complete the transaction - see how the TEKRIO marketplace works.",
   },
   {
     file: "sell.html",
@@ -60,7 +60,7 @@ module.exports = [
     active: "customers",
     title: "Sell Your Old Phone or Device for the Right Price | TEKRIO",
     description:
-      "Sell your pre-owned device with offers from multiple verified buyers. Compare offers, choose one, and complete the sale at a TEKRIO partnered store.",
+      "Sell your pre-owned device for the highest of multiple verified buyers' offers, and complete the sale with doorstep pickup.",
   },
   {
     file: "for-retailers.html",

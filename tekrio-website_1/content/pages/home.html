@@ -1,16 +1,66 @@
 <section class="hero">
+  <svg class="hero-net" viewBox="0 0 1200 560" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <g stroke="rgba(34,211,238,.35)" stroke-width="1">
+      <line x1="40" y1="90" x2="230" y2="180"/>
+      <line x1="230" y1="180" x2="120" y2="320"/>
+      <line x1="230" y1="180" x2="400" y2="120"/>
+      <line x1="120" y1="320" x2="40" y2="470"/>
+      <line x1="400" y1="120" x2="580" y2="240"/>
+    </g>
+    <g fill="#22D3EE" opacity=".8">
+      <circle cx="40" cy="90" r="3.5"/><circle cx="230" cy="180" r="4.5"/><circle cx="120" cy="320" r="3.5"/>
+      <circle cx="400" cy="120" r="3.5"/><circle cx="40" cy="470" r="3"/><circle cx="580" cy="240" r="3"/>
+    </g>
+  </svg>
   <div class="container hero-inner hero-single">
     <div>
       <span class="eyebrow-stamp">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7.5L5.5 11L12 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Pre-Owned Device Marketplace
       </span>
-      <h1>Sell your pre-owned device to verified buyers, through a retailer and marketplace you trust.</h1>
-      <p class="lede">TEKRIO brings customers, retailers and verified buyers onto one marketplace. Tell us about your device, compare offers from multiple buyers, and choose the one that works for you &mdash; transparently.</p>
+      <h1>Sell your pre-owned device to <span class="hero-accent">verified buyers</span>, through a retailer and marketplace you trust.</h1>
+      <p class="lede">TEKRIO brings customers, retailers and verified buyers onto one marketplace. Tell us about your device, verified buyers make offers, and we bring you the highest one &mdash; transparently.</p>
       <div class="hero-ctas">
         <a href="/sell.html" class="btn btn-gold">Sell Your Device</a>
         <a href="/how-it-works.html" class="btn btn-outline-light">See How It Works</a>
       </div>
+    </div>
+    <div class="hero-stage" aria-hidden="true">
+      <div class="hero-stage-backcard"></div>
+      <!-- offers stack up one by one, then the best one is picked (main.js);
+           without JS or with reduced motion it shows the finished state -->
+      <div class="device-card" data-offer-stack>
+        <div class="dc-top">
+          <div class="dc-kicker">Live offers</div>
+          <div class="dc-title">iPhone 13 &middot; 128GB</div>
+        </div>
+        <div class="dc-body">
+          <div class="dc-row"><span>Offers received</span><b data-offer-count>4 buyers</b></div>
+          <div class="dc-offers">
+            <div class="dc-offer-item"><span class="dc-tick"></span>Buyer 1<b>&#8377;26,900</b></div>
+            <div class="dc-offer-item"><span class="dc-tick"></span>Buyer 2<b>&#8377;27,500</b></div>
+            <div class="dc-offer-item"><span class="dc-tick"></span>Buyer 3<b>&#8377;25,800</b></div>
+            <div class="dc-offer-item is-best" data-best><span class="dc-tick"></span>Buyer 4<small>BEST</small><b>&#8377;28,400</b></div>
+          </div>
+          <div class="dc-btn">Accept &amp; schedule pickup</div>
+        </div>
+      </div>
+      <div class="hero-chip c1"><span class="ic"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Verified buyers</div>
+      <div class="hero-chip c2"><span class="ic"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><rect x="3" y="7" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2"/><path d="M17 10h2.5a1 1 0 0 1 .9.56L22 13v4h-2" stroke="currentColor" stroke-width="2"/></svg></span>Doorstep pickup</div>
+      <div class="hero-chip c4"><span class="ic"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>Pickup within 60 mins</div>
+    </div>
+  </div>
+</section>
+
+<!-- the same brands the Sell form offers; scrolls on its own once main.js runs -->
+<section class="brand-strip" aria-label="Brands you can sell">
+  <div class="container brand-strip-inner">
+    <p class="brand-strip-label">Sell phones from</p>
+    <div class="marquee" data-marquee>
+      <ul class="marquee-track">
+        <li>Apple</li><li>Samsung</li><li>OnePlus</li><li>Xiaomi</li><li>Redmi</li><li>Vivo</li>
+        <li>Oppo</li><li>Realme</li><li>Google Pixel</li><li>Motorola</li><li>Nothing</li><li>iQOO</li>
+      </ul>
     </div>
   </div>
 </section>
@@ -34,21 +84,28 @@
       </div>
       <div class="step">
         <span class="step-num">3</span>
-        <h3>Get offers</h3>
-        <p>A TEKRIO partnered store verifies the device and verified buyers make their offers.</p>
+        <h3>Buyers make offers</h3>
+        <p>A TEKRIO partnered store verifies your device, then verified buyers make their offers.</p>
       </div>
       <div class="step">
         <span class="step-num">4</span>
-        <h3>Choose offer</h3>
-        <p>Compare every buyer offer side by side and pick the one you want.</p>
+        <h3>Get your best offer</h3>
+        <p>We bring you the highest offer. No comparing, no haggling.</p>
       </div>
       <div class="step">
         <span class="step-num">5</span>
         <h3>Complete transaction</h3>
-        <p>Hand over your device at the partnered store and get paid.</p>
+        <p>Our pickup partner collects your device and you get paid.</p>
       </div>
     </div>
     <p class="text-center" style="margin:32px auto 0;"><a href="/sell.html" class="btn btn-gold">Start Selling</a></p>
+  </div>
+</section>
+
+<!-- words light up as the statement scrolls through the screen (main.js) -->
+<section class="statement-section">
+  <div class="container">
+    <p class="scroll-statement" data-scroll-statement>Your device. Multiple verified buyers make offers. You get the highest one, with no haggling.</p>
   </div>
 </section>
 
@@ -64,8 +121,8 @@
         <ul>
           <li><span class="mark" aria-hidden="true">&#9670;</span> Sell a pre-owned device through a simple, guided journey</li>
           <li><span class="mark" aria-hidden="true">&#9670;</span> Multiple buyer offers, not just one shop's price</li>
-          <li><span class="mark" aria-hidden="true">&#9670;</span> Every offer shown to you before you decide</li>
-          <li><span class="mark" aria-hidden="true">&#9670;</span> Complete the sale at a partnered store near you</li>
+          <li><span class="mark" aria-hidden="true">&#9670;</span> The highest offer brought straight to you</li>
+          <li><span class="mark" aria-hidden="true">&#9670;</span> Complete the sale with doorstep pickup</li>
         </ul>
         <a href="/sell.html" class="go">Sell your device &rarr;</a>
       </div>
@@ -111,14 +168,14 @@
         <span class="mark-badge" aria-hidden="true">&#8377;</span>
         <div>
           <h3>Competitive offers</h3>
-          <p>Multiple buyers make offers on the same device, so you can compare before you choose.</p>
+          <p>Multiple buyers make offers on the same device, and you get the highest one.</p>
         </div>
       </div>
       <div class="mark-item">
         <span class="mark-badge" aria-hidden="true">&#9679;</span>
         <div>
           <h3>Trusted partnered stores</h3>
-          <p>Your device is inspected and the sale completed at a partnered store.</p>
+          <p>Your device is inspected and the sale completed right at your doorstep.</p>
         </div>
       </div>
       <div class="mark-item">
