@@ -27,25 +27,40 @@
     </div>
     <div class="hero-stage" aria-hidden="true">
       <div class="hero-stage-backcard"></div>
-      <div class="device-card">
+      <!-- offers stack up one by one, then the best one is picked (main.js);
+           without JS or with reduced motion it shows the finished state -->
+      <div class="device-card" data-offer-stack>
         <div class="dc-top">
-          <div class="dc-kicker">Live offer</div>
+          <div class="dc-kicker">Live offers</div>
           <div class="dc-title">iPhone 13 &middot; 128GB</div>
         </div>
         <div class="dc-body">
-          <div class="dc-row"><span>Condition</span><b>Good</b></div>
-          <div class="dc-row"><span>Offers received</span><b>4 buyers</b></div>
-          <div class="dc-offer">
-            <div><small>BEST OFFER</small><b>&#8377;28,400</b></div>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#0369A1" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div class="dc-row"><span>Offers received</span><b data-offer-count>4 buyers</b></div>
+          <div class="dc-offers">
+            <div class="dc-offer-item"><span class="dc-tick"></span>Buyer 1<b>&#8377;26,900</b></div>
+            <div class="dc-offer-item"><span class="dc-tick"></span>Buyer 2<b>&#8377;27,500</b></div>
+            <div class="dc-offer-item"><span class="dc-tick"></span>Buyer 3<b>&#8377;25,800</b></div>
+            <div class="dc-offer-item is-best" data-best><span class="dc-tick"></span>Buyer 4<small>BEST</small><b>&#8377;28,400</b></div>
           </div>
           <div class="dc-btn">Accept &amp; schedule pickup</div>
         </div>
       </div>
-      <div class="hero-chip c1"><span class="ic"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Verified buyer</div>
+      <div class="hero-chip c1"><span class="ic"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Verified buyers</div>
       <div class="hero-chip c2"><span class="ic"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><rect x="3" y="7" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2"/><path d="M17 10h2.5a1 1 0 0 1 .9.56L22 13v4h-2" stroke="currentColor" stroke-width="2"/></svg></span>Doorstep pickup</div>
-      <div class="hero-chip c3"><span class="ic"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 2l7 3v6c0 5-3.4 8.4-7 10-3.6-1.6-7-5-7-10V5l7-3z" stroke="currentColor" stroke-width="2"/></svg></span>No obligation</div>
       <div class="hero-chip c4"><span class="ic"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>Pickup within 60 mins</div>
+    </div>
+  </div>
+</section>
+
+<!-- the same brands the Sell form offers; scrolls on its own once main.js runs -->
+<section class="brand-strip" aria-label="Brands you can sell">
+  <div class="container brand-strip-inner">
+    <p class="brand-strip-label">Sell phones from</p>
+    <div class="marquee" data-marquee>
+      <ul class="marquee-track">
+        <li>Apple</li><li>Samsung</li><li>OnePlus</li><li>Xiaomi</li><li>Redmi</li><li>Vivo</li>
+        <li>Oppo</li><li>Realme</li><li>Google Pixel</li><li>Motorola</li><li>Nothing</li><li>iQOO</li>
+      </ul>
     </div>
   </div>
 </section>
@@ -84,6 +99,13 @@
       </div>
     </div>
     <p class="text-center" style="margin:32px auto 0;"><a href="/sell.html" class="btn btn-gold">Start Selling</a></p>
+  </div>
+</section>
+
+<!-- words light up as the statement scrolls through the screen (main.js) -->
+<section class="statement-section">
+  <div class="container">
+    <p class="scroll-statement" data-scroll-statement>Your device. Multiple verified buyers bid on it. You get the highest offer, with no haggling.</p>
   </div>
 </section>
 

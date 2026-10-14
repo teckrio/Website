@@ -210,6 +210,25 @@ section { padding: 88px 0; }
   background: rgba(245, 247, 252, 0.1);
   box-shadow: inset 0 -2px 0 var(--gold);
 }
+/* hover line: sweeps in from the left, leaves to the right */
+.main-nav a, .login-link { position: relative; }
+.main-nav a:not(.active)::after, .login-link:not(.active)::after {
+  content: "";
+  position: absolute;
+  left: 11px; right: 11px; bottom: 7px;
+  height: 1.5px;
+  background: var(--gold);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 260ms var(--ease);
+}
+.main-nav a:hover::after, .login-link:hover::after { transform: scaleX(1); transform-origin: left; }
+/* same idea for text links (wraps cleanly across lines) */
+.footer-grid a, .breadcrumb a, .audience-col .go, .contact-info-item .directions a {
+  background: linear-gradient(currentColor, currentColor) left calc(100% - 1px) / 0 1px no-repeat;
+  transition: background-size 260ms var(--ease), color 150ms ease;
+}
+.footer-grid a:hover, .breadcrumb a:hover, .audience-col .go:hover, .contact-info-item .directions a:hover { background-size: 100% 1px; }
 @media (min-width: 1280px) {
   .main-nav { display: flex; }
 }
@@ -283,7 +302,15 @@ section { padding: 88px 0; }
   background: radial-gradient(circle, rgba(2,132,199,.38), transparent 70%);
   filter: blur(12px);
   pointer-events: none;
+  animation: tekrioDrift 24s ease-in-out infinite alternate;
 }
+/* the glow wanders slowly behind the hero, too slow to pull the eye */
+@keyframes tekrioDrift {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-160px, 110px) scale(1.15); }
+  100% { transform: translate(-60px, 200px) scale(.95); }
+}
+@media (prefers-reduced-motion: reduce) { .hero::before { animation: none; } }
 .hero::after {
   content: "";
   position: absolute;
@@ -314,9 +341,7 @@ section { padding: 88px 0; }
   border-radius: 22px;
   overflow: hidden;
   box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255,255,255,.06);
-  animation: tekrioFloat 6.5s ease-in-out infinite;
 }
-@keyframes tekrioFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
 .dc-top { padding: 16px 17px 0; }
 .dc-kicker { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--teal); }
 .dc-kicker::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: #22C55E; box-shadow: 0 0 0 3px rgba(34,197,94,.22); animation: tekrioPulse 1.7s ease-in-out infinite; }
@@ -325,10 +350,44 @@ section { padding: 88px 0; }
 .dc-body { padding: 12px 17px 17px; display: flex; flex-direction: column; gap: 9px; }
 .dc-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 12.5px; }
 .dc-row b { font-weight: 700; }
-.dc-offer { display: flex; align-items: center; justify-content: space-between; border: 2px solid var(--teal); background: var(--teal-tint); border-radius: 12px; padding: 11px 12px; }
-.dc-offer small { display: block; color: var(--teal-deep); font-weight: 700; font-size: 10.5px; letter-spacing: .02em; }
-.dc-offer b { font-size: 17px; font-weight: 800; letter-spacing: -0.02em; }
-.dc-btn { margin-top: 2px; background: var(--teal); color: var(--white); text-align: center; border-radius: 11px; padding: 12px; font-weight: 700; font-size: 13px; }
+/* buyer offers, stacked; main.js adds .is-animating and plays them in one by one */
+.dc-offers { display: flex; flex-direction: column; gap: 7px; }
+.dc-offer-item {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--paper); border: 1px solid var(--line); border-radius: 12px;
+  padding: 9px 12px; font-size: 12.5px; font-weight: 600;
+  transition: opacity 380ms var(--ease), transform 480ms var(--ease), background-color 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
+}
+.dc-tick {
+  width: 16px; height: 16px; border-radius: 50%; flex-shrink: 0;
+  background: var(--verified-tint) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 12.5l4 4L18 8' fill='none' stroke='%23166534' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 11px no-repeat;
+}
+.dc-offer-item small { font-size: 9.5px; font-weight: 800; letter-spacing: .06em; color: var(--teal-deep); opacity: 0; transition: opacity 300ms ease; }
+.dc-offer-item b { margin-left: auto; font-size: 13.5px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.dc-offer-item.is-best { border-color: var(--teal); background: var(--teal-tint); box-shadow: 0 0 0 1px var(--teal), 0 10px 20px -12px rgba(2,132,199,.55); }
+.dc-offer-item.is-best small { opacity: 1; }
+.dc-offer-item.is-best b { color: var(--teal-deep); }
+.device-card.is-animating .dc-offer-item { opacity: 0; transform: translateY(16px) scale(.95); }
+.device-card.is-animating .dc-offer-item.is-in { opacity: 1; transform: none; }
+/* final beat: the other bids fold away and the best one fills the card.
+   The list keeps its height so the card doesn't jump. */
+.device-card.is-animating .dc-offers { justify-content: center; }
+/* close to its real height (~36px), so folding starts right away */
+.dc-offer-item { max-height: 40px; }
+.device-card.is-animating .dc-offer-item.is-gone {
+  max-height: 0; padding-block: 0; border-width: 0; margin-top: -7px;
+  opacity: 0; transform: scale(.96);
+  transition: opacity 260ms ease, transform 300ms ease, max-height 420ms var(--ease) 120ms, padding 420ms var(--ease) 120ms, margin 420ms var(--ease) 120ms, border-width 420ms var(--ease) 120ms;
+}
+.dc-offer-item.is-final { max-height: 90px; padding: 16px 14px; font-size: 13.5px; transition: padding 420ms var(--ease) 120ms, opacity 380ms var(--ease), transform 480ms var(--ease), background-color 300ms ease, box-shadow 300ms ease; }
+.dc-offer-item.is-final { flex-wrap: wrap; row-gap: 8px; }
+.dc-offer-item.is-final small { order: -1; flex-basis: 100%; font-size: 10px; }
+.dc-offer-item.is-final small::before { content: "YOUR "; }
+.dc-offer-item.is-final small::after { content: " OFFER"; }
+.dc-offer-item.is-final b { font-size: 22px; }
+.dc-btn { margin-top: 2px; background: var(--teal); color: var(--white); text-align: center; border-radius: 11px; padding: 12px; font-weight: 700; font-size: 13px; transition: box-shadow 400ms ease, transform 400ms var(--ease); }
+.device-card.is-picked .dc-btn { box-shadow: 0 0 0 4px rgba(34,211,238,.35); transform: translateY(-1px); }
+/* chips sit still now: the offer stack is the one moving story in the hero */
 .hero-chip {
   position: absolute;
   display: flex; align-items: center; gap: 8px;
@@ -336,35 +395,16 @@ section { padding: 88px 0; }
   border-radius: 100px; padding: 9px 14px 9px 10px;
   font-size: .78rem; font-weight: 700;
   box-shadow: var(--shadow-md);
-  animation: tekrioFloat 6.5s ease-in-out infinite;
 }
 .hero-chip .ic { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.hero-chip.c1 { top: 2%; right: -2%; animation-delay: .4s; z-index: 1; }
+.hero-chip.c1 { top: 4%; right: -2%; z-index: 1; }
 .hero-chip.c1 .ic { background: var(--verified-tint); color: var(--verified); }
-/* the one chip tied to a trust claim gets its own pulse, so motion carries meaning instead of decorating everything */
-.hero-chip.c1::before {
-  content: "";
-  position: absolute;
-  inset: -5px;
-  border-radius: 100px;
-  border: 1.5px solid rgba(22,163,74,.5);
-  z-index: -1;
-  animation: tekrioVerifiedRing 2.4s ease-out infinite;
-  animation-delay: .4s;
-}
-@keyframes tekrioVerifiedRing {
-  0% { opacity: .9; transform: scale(.92); }
-  70% { opacity: 0; transform: scale(1.3); }
-  100% { opacity: 0; transform: scale(1.3); }
-}
-.hero-chip.c2 { bottom: 16%; left: -6%; animation-delay: 1.1s; }
+.hero-chip.c2 { bottom: 14%; left: -4%; z-index: 1; }
 .hero-chip.c2 .ic { background: #E9F7FE; color: #075985; }
-.hero-chip.c3 { bottom: -3%; right: 8%; animation-delay: .7s; }
-.hero-chip.c3 .ic { background: var(--gold-light); color: #92400E; }
-.hero-chip.c4 { top: -4%; left: 4%; animation-delay: 1.5s; }
+.hero-chip.c4 { top: -2%; left: 4%; }
 .hero-chip.c4 .ic { background: var(--teal-tint); color: var(--teal-deep); }
 @media (max-width: 719px) { .hero-chip, .hero-stage-backcard, .hero-stage { display: none; } }
-@media (prefers-reduced-motion: reduce) { .device-card, .hero-chip, .hero-chip.c1::before, .dc-kicker::before { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .dc-kicker::before { animation: none; } }
 .eyebrow-stamp {
   display: inline-flex;
   align-items: center;
@@ -393,14 +433,27 @@ section { padding: 88px 0; }
   margin-bottom: 30px;
 }
 .hero-ctas { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 28px; }
-/* draw the eye to the single primary action in the hero, nowhere else */
-.hero-ctas .btn-gold { animation: tekrioCtaPulse 2.6s ease-out infinite; }
-@keyframes tekrioCtaPulse {
-  0% { box-shadow: 0 10px 22px -12px rgba(2,132,199,.6), 0 0 0 0 rgba(2,132,199,.55); }
-  70% { box-shadow: 0 10px 22px -12px rgba(2,132,199,.6), 0 0 0 14px rgba(2,132,199,0); }
-  100% { box-shadow: 0 10px 22px -12px rgba(2,132,199,.6), 0 0 0 0 rgba(2,132,199,0); }
+/* the hero's main action: still at rest, a light runs round its border on hover/focus */
+@property --btn-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+.hero-ctas .btn-gold { position: relative; }
+.hero-ctas .btn-gold::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  padding: 2px;
+  border-radius: 6px;
+  background: conic-gradient(from var(--btn-angle), transparent 0 55%, var(--gold) 72%, #fff 78%, var(--gold) 84%, transparent 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 200ms ease;
+  pointer-events: none;
 }
-@media (prefers-reduced-motion: reduce) { .hero-ctas .btn-gold { animation: none; } }
+.hero-ctas .btn-gold:hover, .hero-ctas .btn-gold:focus-visible { box-shadow: 0 14px 30px -10px rgba(34,211,238,.55); }
+.hero-ctas .btn-gold:hover::before, .hero-ctas .btn-gold:focus-visible::before { opacity: 1; animation: tekrioBtnSpin 2.2s linear infinite; }
+@keyframes tekrioBtnSpin { to { --btn-angle: 360deg; } }
+@media (prefers-reduced-motion: reduce) { .hero-ctas .btn-gold:hover::before, .hero-ctas .btn-gold:focus-visible::before { animation: none; } }
 .trust-line {
   font-size: 0.85rem;
   color: #98A9C3;
@@ -472,6 +525,54 @@ section { padding: 88px 0; }
   .steps-5 .step p { font-size: 0.92rem; }
 }
 
+/* Timeline rail: main.js adds .has-rail and drives --progress (0 to 1)
+   as the steps scroll through the screen, and marks each step it has
+   reached. Runs across the top on wide screens and down the left side
+   on phones; the 3-column tablet layout has no rail. */
+.steps.has-rail { position: relative; }
+.steps.has-rail::before, .steps.has-rail::after,
+.steps.has-rail .step::before { content: none; }
+.step.is-reached .step-num { background: var(--teal); color: var(--white); }
+@media (min-width: 1100px) {
+  .steps-5.has-rail { padding-top: 36px; }
+  .steps-5.has-rail::before, .steps-5.has-rail::after {
+    content: "";
+    position: absolute; top: 10px; left: 0; right: 0;
+    height: 3px; border-radius: 3px;
+    background: var(--line);
+  }
+  .steps-5.has-rail::after {
+    background: linear-gradient(90deg, var(--teal), var(--gold));
+    transform-origin: left;
+    transform: scaleX(var(--progress, 0));
+  }
+  .steps-5.has-rail .step::before { content: ""; top: -31px; left: 18px; }
+}
+@media (max-width: 799px) {
+  .steps.has-rail { padding-left: 30px; }
+  .steps.has-rail::before, .steps.has-rail::after {
+    content: "";
+    position: absolute; top: 0; bottom: 0; left: 9px;
+    width: 3px; border-radius: 3px;
+    background: var(--line);
+  }
+  .steps.has-rail::after {
+    background: linear-gradient(180deg, var(--teal), var(--gold));
+    transform-origin: top;
+    transform: scaleY(var(--progress, 0));
+  }
+  .steps.has-rail .step::before { content: ""; top: 38px; left: -27px; }
+}
+.steps.has-rail .step::before {
+  position: absolute;
+  width: 15px; height: 15px; border-radius: 50%;
+  background: var(--white);
+  border: 3px solid var(--line);
+  box-sizing: border-box;
+  transition: border-color 250ms ease, background-color 250ms ease, box-shadow 250ms ease;
+}
+.steps.has-rail .step.is-reached::before { border-color: var(--teal); background: var(--teal); box-shadow: 0 0 0 4px var(--teal-tint); }
+
 /* Three-audience columns */
 .audience-grid {
   display: grid;
@@ -496,7 +597,20 @@ section { padding: 88px 0; }
 }
 .audience-col:nth-child(2)::before { background: #F5B942; }
 .audience-col:nth-child(3)::before { background: #34D399; }
-.audience-col:hover { transform: translateY(-5px); box-shadow: 0 26px 48px -24px rgba(0,0,0,.5); }
+.audience-col:hover { transform: translateY(-5px); box-shadow: 0 26px 48px -24px rgba(0,0,0,.5); border-color: rgba(34,211,238,.35); }
+/* glow that follows the pointer (main.js sets --mx/--my, hover devices only) */
+.audience-col::after, .card-grid .card::after {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(360px circle at var(--mx, 50%) var(--my, 0%), rgba(34,211,238,.13), transparent 60%);
+  opacity: 0;
+  transition: opacity 300ms ease;
+  pointer-events: none;
+}
+.card-grid .card { position: relative; }
+.card-grid .card::after { background: radial-gradient(320px circle at var(--mx, 50%) var(--my, 0%), rgba(2,132,199,.09), transparent 60%); }
+.audience-col:hover::after, .card-grid .card:hover::after { opacity: 1; }
 .audience-col h3 {
   color: var(--white);
   font-size: 1.05rem;
@@ -818,7 +932,6 @@ section { padding: 88px 0; }
 .contact-info-item h3 { margin-bottom: 6px; }
 .contact-info-item .directions { margin: 8px 0 0; }
 .contact-info-item .directions a { color: var(--teal); font-weight: 600; text-decoration: none; }
-.contact-info-item .directions a:hover { text-decoration: underline; }
 
 /* ---------- sell your device journey ---------- */
 .journey {
@@ -1176,9 +1289,81 @@ section { padding: 88px 0; }
 .reveal-group.is-visible > *:nth-child(3) { transition-delay: 120ms; }
 .reveal-group.is-visible > *:nth-child(4) { transition-delay: 180ms; }
 .reveal-group.is-visible > *:nth-child(5) { transition-delay: 240ms; }
+/* section headings rise out of a mask just after their block fades in */
+.section-head.reveal h2 {
+  clip-path: inset(-0.2em 0 100% 0);
+  transform: translateY(0.45em);
+  transition: clip-path 650ms var(--ease) 90ms, transform 650ms var(--ease) 90ms;
+}
+.section-head.reveal.is-visible h2 { clip-path: inset(-0.2em 0 -0.2em 0); transform: none; }
 @media (prefers-reduced-motion: reduce) {
   .reveal, .reveal-group > * { opacity: 1; transform: none; }
+  .section-head.reveal h2 { clip-path: none; transform: none; }
 }
+
+/* ---------- brand strip (home) ---------- */
+.brand-strip { padding: 28px 0; border-bottom: 1px solid var(--line); }
+.brand-strip-inner { display: flex; align-items: center; gap: 28px; }
+.brand-strip-label {
+  flex-shrink: 0;
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--teal);
+}
+.marquee { flex: 1; min-width: 0; overflow: hidden; }
+.marquee-track {
+  display: flex;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.marquee-track li {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding-right: 28px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #8A97AE;
+  white-space: nowrap;
+  transition: color 160ms ease;
+}
+.marquee-track li::after { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--line); }
+.marquee-track li:hover { color: var(--ink); }
+/* main.js doubles the list and adds .is-running: one copy slides out as
+   the identical copy slides in, so the loop has no visible seam */
+.marquee.is-running {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.marquee.is-running .marquee-track { flex-wrap: nowrap; width: max-content; animation: tekrioMarquee 38s linear infinite; }
+.marquee.is-running:hover .marquee-track { animation-play-state: paused; }
+@keyframes tekrioMarquee { to { transform: translateX(-50%); } }
+@media (max-width: 720px) {
+  .brand-strip-inner { flex-direction: column; align-items: stretch; gap: 12px; }
+  .brand-strip-label { text-align: center; }
+}
+
+/* ---------- scroll-lit statement (home) ---------- */
+.statement-section { padding: 120px 0; background: var(--white); }
+.scroll-statement {
+  max-width: 24ch;
+  margin: 0 auto;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 4.6vw, 3.6rem);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+  color: var(--ink);
+}
+/* main.js wraps each word; --lit runs 0 to 1 per word as the page scrolls */
+.scroll-statement .sw { color: color-mix(in srgb, var(--ink) calc(var(--lit, 0) * 100%), #CBD3E1); }
+@media (max-width: 720px) { .statement-section { padding: 72px 0; } }
 
 /* ---------- back-to-top (injected by main.js) ---------- */
 .back-to-top {
