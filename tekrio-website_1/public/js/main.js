@@ -184,4 +184,67 @@
         });
     });
   });
+
+  // ---------- header shadow once the page scrolls ----------
+  var siteHeader = document.querySelector(".site-header");
+  if (siteHeader) {
+    var updateHeaderShadow = function () {
+      siteHeader.classList.toggle("is-scrolled", window.scrollY > 8);
+    };
+    updateHeaderShadow();
+    window.addEventListener("scroll", updateHeaderShadow, { passive: true });
+  }
+
+  // ---------- back-to-top button (injected, no template changes needed) ----------
+  var backToTop = document.createElement("button");
+  backToTop.className = "back-to-top";
+  backToTop.type = "button";
+  backToTop.setAttribute("aria-label", "Back to top");
+  backToTop.innerHTML =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  document.body.appendChild(backToTop);
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  window.addEventListener(
+    "scroll",
+    function () {
+      backToTop.classList.toggle("show", window.scrollY > 600);
+    },
+    { passive: true }
+  );
+  backToTop.addEventListener("click", function () {
+    window.scrollTo({ top: 0, behavior: reduceMotion.matches ? "auto" : "smooth" });
+  });
+
+  // ---------- scroll-reveal on repeated content (steps, cards, marks, etc.) ----------
+  // Progressive enhancement only: every element below is already fully visible
+  // without JS/CSS support, this just animates it into place as it scrolls in.
+  if ("IntersectionObserver" in window && !reduceMotion.matches) {
+    var revealTargets = document.querySelectorAll(
+      ".section-head, .cta-band .container, .form-card, .story .section-head, .contact-grid, .two-col"
+    );
+    var revealGroups = document.querySelectorAll(
+      ".steps, .marks-grid, .card-grid, .audience-grid"
+    );
+    // Positive bottom rootMargin fires the reveal while the content is still
+    // just below the viewport, so it's already animating by the time it's seen
+    // instead of waiting for it to sit mostly in view first.
+    // Toggle (not a one-time add) so content keeps popping in every time it
+    // scrolls into view, not just the first time the page loads.
+    var revealObserver = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          entry.target.classList.toggle("is-visible", entry.isIntersecting);
+        });
+      },
+      { threshold: 0.01, rootMargin: "0px 0px 180px 0px" }
+    );
+    revealTargets.forEach(function (el) {
+      el.classList.add("reveal");
+      revealObserver.observe(el);
+    });
+    revealGroups.forEach(function (el) {
+      el.classList.add("reveal-group");
+      revealObserver.observe(el);
+    });
+  }
 })();

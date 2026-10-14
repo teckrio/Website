@@ -60,7 +60,7 @@ module.exports = [
     active: "customers",
     title: "Sell Your Old Phone or Device for the Right Price | TEKRIO",
     description:
-      "Sell your pre-owned device with offers from multiple verified buyers. Compare offers, choose one, and complete the sale at a TEKRIO partnered store.",
+      "Sell your pre-owned device with offers from multiple verified buyers. Compare offers, choose one, and complete the sale with doorstep pickup.",
   },
   {
     file: "for-retailers.html",
