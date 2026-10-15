@@ -21,5 +21,9 @@
     window.dataLayer.push(arguments);
   };
   window.gtag("js", new Date());
-  window.gtag("config", id);
+  // page URL without its #fragment: the seller offer link carries its
+  // private token there, and no page uses the fragment for anything else
+  window.gtag("config", id, {
+    page_location: window.location.origin + window.location.pathname + window.location.search,
+  });
 })();

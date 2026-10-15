@@ -1,0 +1,121 @@
+<section class="page-hero">
+  <div class="container">
+    <div class="breadcrumb"><a href="/">Home</a> / Your Offer</div>
+    <h1>Your offer</h1>
+    <p>Bidding on your device has ended. Review the best offer from our verified buyers below.</p>
+  </div>
+</section>
+
+<section class="section-paper">
+  <div class="container">
+    <div class="form-card sell-card offer-card" aria-live="polite">
+      <!-- loading -->
+      <div data-offer-state="loading">
+        <p class="form-sub">Loading your offer&hellip;</p>
+      </div>
+
+      <!-- open offer -->
+      <div data-offer-state="open" hidden>
+        <span class="eyebrow-stamp is-light">Best offer</span>
+        <p class="offer-device" data-offer-device></p>
+        <p class="offer-amount" data-offer-amount></p>
+        <p class="form-sub">Reference <strong data-offer-ref></strong> &middot; accept by <strong data-offer-expires></strong></p>
+        <p>After you accept, you'll see the buyer's shop address and phone number. Take your phone there within 48 hours: the buyer checks it and pays you directly, by UPI or cash.</p>
+        <p class="price-note"><strong>Please note:</strong> if the phone's condition differs from what you described, the buyer can propose a lower price. You decide whether to accept it; you're never obliged to sell.</p>
+        <button type="button" class="btn btn-gold" data-offer-accept>Accept this offer</button>
+        <p class="form-status" role="status" data-offer-status></p>
+        <p class="form-note">Don't want to sell? Just ignore this offer; it expires on its own. Questions? Email <a href="mailto:info@tekrio.in">info@tekrio.in</a>.</p>
+      </div>
+
+      <!-- accepted: handover at the buyer's shop -->
+      <div data-offer-state="accepted" hidden>
+        <span class="eyebrow-stamp is-light">Offer accepted</span>
+        <h2>Take your phone to the buyer</h2>
+        <p class="offer-device" data-offer-device></p>
+        <p class="offer-amount" data-offer-handover-amount></p>
+        <p class="form-sub">Reference <strong data-offer-ref></strong> &middot; visit by <strong data-offer-deadline></strong></p>
+
+        <div class="offer-vendor">
+          <p class="offer-vendor-name" data-offer-vendor-name></p>
+          <p data-offer-vendor-address></p>
+          <p><a data-offer-vendor-phone></a></p>
+        </div>
+
+        <!-- the buyer proposed a lower price at the shop -->
+        <div class="offer-box" data-offer-revision hidden>
+          <p><strong>The buyer proposed a new price: <span data-offer-revision-amount></span></strong></p>
+          <p class="form-sub">Reason: <span data-offer-revision-reason></span></p>
+          <div class="offer-actions">
+            <button type="button" class="btn btn-gold" data-offer-action="revision" data-value="accept">Accept new price</button>
+            <button type="button" class="btn btn-outline-dark" data-offer-action="revision" data-value="decline">Decline and cancel the sale</button>
+          </div>
+        </div>
+
+        <!-- after payment: the code the buyer needs to close the sale -->
+        <div class="offer-box offer-code-box" data-offer-code-box hidden>
+          <p>Give this code to the buyer to complete the sale:</p>
+          <p class="offer-code" data-offer-code></p>
+          <p class="form-note">Only share it once you've received your money.</p>
+        </div>
+
+        <div data-offer-pay-step>
+          <ol class="next-list">
+            <li><strong>Visit the shop</strong> with the phone, its accessories and a government photo ID.</li>
+            <li><strong>The buyer checks the phone</strong> and records your ID in the TEKRIO app.</li>
+            <li><strong>Get paid</strong> by the buyer, by UPI or cash.</li>
+            <li><strong>Confirm payment here</strong>; you'll get a code to give the buyer, which completes the sale.</li>
+          </ol>
+          <button type="button" class="btn btn-gold" data-offer-action="paid">I've been paid <span data-offer-handover-amount></span></button>
+        </div>
+        <p class="form-status" role="status" data-offer-status></p>
+
+        <details class="offer-more" data-offer-cancel-box>
+          <summary>Changed your mind, or a problem with the buyer?</summary>
+          <p><button type="button" class="btn btn-outline-dark" data-offer-action="cancel" data-value="changed_mind">I don't want to sell anymore</button></p>
+          <label for="offer-note">Problem with the buyer (for example they refused the price, or asked you to sell outside TEKRIO)</label>
+          <textarea id="offer-note" rows="3" maxlength="500" data-offer-note></textarea>
+          <p><button type="button" class="btn btn-outline-dark" data-offer-action="cancel" data-value="vendor_problem">Report a problem</button></p>
+        </details>
+        <p class="form-note">Tip: back up your data and sign out of your accounts before the visit. Questions? Email <a href="mailto:info@tekrio.in">info@tekrio.in</a>.</p>
+      </div>
+
+      <!-- check-in after a missed handover -->
+      <div data-offer-state="checkin" hidden>
+        <span class="eyebrow-stamp is-light">Quick question</span>
+        <h2>Did you sell your phone to <span data-offer-vendor-name></span>?</h2>
+        <p>The sale wasn't completed in the TEKRIO app. Please tell us what happened.</p>
+        <div class="offer-actions">
+          <button type="button" class="btn btn-gold" data-offer-action="checkin" data-value="sold">Yes, I sold it</button>
+          <button type="button" class="btn btn-outline-dark" data-offer-action="checkin" data-value="not_sold">No, I didn't sell it</button>
+        </div>
+        <p class="form-status" role="status" data-offer-status></p>
+      </div>
+
+      <!-- finished -->
+      <div class="sell-done" data-offer-state="completed" hidden>
+        <span class="eyebrow-stamp is-light">Sale complete</span>
+        <h2>Thanks for selling with TEKRIO</h2>
+        <p>Reference: <strong data-offer-ref></strong>. We hope it went smoothly.</p>
+        <a href="/" class="btn btn-outline-dark">Back to Home</a>
+      </div>
+
+      <div data-offer-state="review" hidden>
+        <span class="eyebrow-stamp is-light">We're on it</span>
+        <h2>Thanks for letting us know</h2>
+        <p>Our team will look into this sale and contact you. Reference: <strong data-offer-ref></strong>.</p>
+        <p class="form-note">Questions? Email <a href="mailto:info@tekrio.in">info@tekrio.in</a>.</p>
+      </div>
+
+      <!-- expired / closed / cancelled / invalid / error -->
+      <div data-offer-state="closed" hidden>
+        <span class="eyebrow-stamp is-light">Offer unavailable</span>
+        <h2 data-offer-title>This offer has expired</h2>
+        <p data-offer-message>Offers are open for a limited time. If you'd still like to sell your device, you can list it again.</p>
+        <a href="/sell" class="btn btn-gold">Sell your device</a>
+        <p class="form-note">Questions? Email <a href="mailto:info@tekrio.in">info@tekrio.in</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="/js/offer.js" defer></script>

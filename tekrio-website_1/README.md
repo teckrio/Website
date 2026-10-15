@@ -71,14 +71,35 @@ faked:
    TEKRIO_APP_API_KEY=your-bearer-token   # optional
    ```
    No code changes needed — just set the variables and restart.
-3. **Sell requests -> app backend.** The backend currently has no public
-   endpoint for customer sell requests (`POST /devices` needs a Store
-   Manager login, a `branchId` and both IMEIs). Sell requests are stored
-   locally and sent through the webhook above; once the backend adds an
-   intake endpoint, point `TEKRIO_APP_API_WEBHOOK_URL` at it. The request's
-   device fields (`platform`, `model`, `storage`, `ram`, `batteryHealth`,
-   `screenDamage`, `bodyScratches`, `deviceAge`, `box`, `bill`, `charger`)
-   already use the backend catalog's names and values.
+3. **Sell requests -> app bidding -> seller offer.** The website side is
+   built; it switches on when the app backend adds three endpoints and you
+   set `TEKRIO_BACKEND_API_KEY` (the same value as the backend's
+   `WEBSITE_API_KEY`):
+   - sellers add photos of the device's six sides (front and back
+     required), the same six a store manager takes in the app. The browser
+     shrinks each to a JPEG of at most 1600 px (dropping location metadata);
+     they're saved in `photos/<lead id>/<side>.jpg` next to `leads.json`
+     (back it up together) and shown as thumbnails in `/admin`.
+   - every sell request is saved to `data/leads.json` as before **and** sent
+     to the backend (header `X-Api-Key`) in three calls:
+     `POST /sell-requests`, `PUT /sell-requests/<lead id>/photos/<side>`
+     per photo, then `POST /sell-requests/<lead id>/ready`, which opens
+     bidding for vendors. Failures are retried twice (after 1 and 5
+     minutes) and then logged with the lead's reference; the lead is still
+     in `/admin`.
+   - when bidding ends, the backend emails the seller a link to
+     `https://www.tekrio.in/offer#t=<token>`. That page
+     (`content/pages/offer.html`, `public/js/offer.js`) shows the winning
+     bid and an **Accept** button. It talks to this server's
+     `POST /api/offer` and `POST /api/offer/accept`, which pass the token to
+     the backend's `/seller-offers/lookup` and `/seller-offers/accept`.
+   The token lives in the URL `#fragment` and request bodies only, so it
+   never appears in server logs, Referer headers or Google Analytics.
+   Until the key is set, sell requests stay local and `/offer` says offers
+   aren't available online yet. The device fields (`platform`, `model`,
+   `storage`, `ram`, `batteryHealth`, `screenDamage`, `bodyScratches`,
+   `deviceAge`, `box`, `bill`, `charger`) use the backend catalog's names
+   and values.
 4. **Retailer listing / buyer offers UI.**
    These are described on the Retailer/Buyer pages as product features of
    the app itself (marked with an amber "pending" badge), not built as
@@ -159,6 +180,7 @@ See `.env.example` for a ready-to-copy list.
 | `TEKRIO_GA_ID` | GA4 Measurement ID, applied at build time | unset (analytics off) |
 | `TEKRIO_GSC_VERIFICATION` | Search Console verification token, applied at build time | unset |
 | `TEKRIO_BACKEND_API_BASE_URL` | TEKRIO app backend (device catalog) | Railway production URL |
+| `TEKRIO_BACKEND_API_KEY` | shared key for the backend's website endpoints (sell-request listing, seller offer page); must match the backend's `WEBSITE_API_KEY` | unset (sell requests stay local) |
 | `TEKRIO_APP_API_WEBHOOK_URL` | pending — see above | unset (no-op) |
 | `TEKRIO_APP_API_KEY` | pending — see above | unset |
 

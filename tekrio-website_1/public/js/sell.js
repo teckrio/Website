@@ -65,6 +65,75 @@
       platform === "apple" ? "e.g. iPhone 13" : platform === "android" ? "e.g. Galaxy S22" : "e.g. iPhone 13 or Galaxy S22";
   });
 
+  // ---------- photos ----------
+  // Each photo is redrawn as a JPEG no larger than MAX_EDGE px: small enough
+  // to upload on mobile data, and redrawing drops the file's metadata (such
+  // as the GPS location phones embed). FileReader gives a data: URL, which
+  // the Content-Security-Policy allows for images (blob: URLs it doesn't).
+  var MAX_EDGE = 1600;
+  var photos = {}; // slot -> JPEG data: URL
+  var busy = {}; // slot -> true while a photo is being shrunk
+  function shrink(file) {
+    return new Promise(function (resolve, reject) {
+      if (!/^image\//.test(file.type)) return reject(new Error("not an image"));
+      var reader = new FileReader();
+      reader.onerror = function () { reject(new Error("unreadable")); };
+      reader.onload = function () {
+        var img = new Image();
+        img.onerror = function () { reject(new Error("undecodable")); };
+        img.onload = function () {
+          var scale = Math.min(1, MAX_EDGE / Math.max(img.naturalWidth, img.naturalHeight));
+          var canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+          canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL("image/jpeg", 0.8));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  form.querySelectorAll("[data-photo]").forEach(function (slotEl) {
+    var slot = slotEl.getAttribute("data-photo");
+    var input = slotEl.querySelector("input[type=file]");
+    var preview = slotEl.querySelector("img");
+    input.addEventListener("change", function () {
+      var file = input.files && input.files[0];
+      if (!file) return;
+      busy[slot] = true;
+      slotEl.classList.add("is-busy");
+      setFieldError(slotEl, "");
+      shrink(file)
+        .then(function (dataUrl) {
+          photos[slot] = dataUrl;
+          preview.src = dataUrl;
+          preview.hidden = false;
+          slotEl.classList.add("has-photo");
+        })
+        .catch(function () {
+          setFieldError(slotEl, "This photo couldn't be read. Please try a JPEG or PNG photo.");
+        })
+        .finally(function () {
+          busy[slot] = false;
+          slotEl.classList.remove("is-busy");
+          input.value = ""; // choosing the same file again still fires "change"
+        });
+    });
+  });
+  function validatePhotos(stepEl) {
+    var valid = true;
+    stepEl.querySelectorAll("[data-photo]").forEach(function (slotEl) {
+      var slot = slotEl.getAttribute("data-photo");
+      var message = "";
+      if (busy[slot]) message = "Still preparing this photo. One moment.";
+      else if (slotEl.hasAttribute("data-required") && !photos[slot]) message = "Add this photo to continue.";
+      if (message) valid = false;
+      if (message || photos[slot]) setFieldError(slotEl, message);
+    });
+    return valid;
+  }
+
   // ---------- validation ----------
   // show/clear a field's error and expose it to screen readers: the
   // control is marked invalid and points at its message
@@ -106,6 +175,8 @@
         message = input.type === "radio" ? "Please choose one." : "This field is required.";
       } else if (value && rule === "mobile" && !/^[6-9]\d{9}$/.test(value)) {
         message = "Enter a valid 10-digit Indian mobile number.";
+      } else if (value && rule === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        message = "Enter a valid email address.";
       } else if (value && rule === "pincode" && !/^[1-9]\d{5}$/.test(value)) {
         message = "Enter a valid 6-digit pincode.";
       } else if (value && rule === "battery" && !/^(100|[1-9]?\d)$/.test(value)) {
@@ -114,6 +185,7 @@
       if (message) valid = false;
       setFieldError(field, message);
     });
+    if (stepEl.querySelector("[data-photo]") && !validatePhotos(stepEl)) valid = false;
     return valid;
   }
 
@@ -128,10 +200,11 @@
       else li.removeAttribute("aria-current");
     });
   }
+  // form steps map onto the 5-step journey (the photo step is part of "Add Details")
   function showStep(n) {
     current = n;
     steps.forEach(function (s) { s.hidden = Number(s.getAttribute("data-step")) !== n; });
-    markJourney(n);
+    markJourney(Number(steps[n - 1].getAttribute("data-journey")));
     var focusable = steps[n - 1].querySelector("input:not([type=hidden]), select");
     if (focusable) focusable.focus({ preventScroll: true });
     document.getElementById("journey").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -167,11 +240,12 @@
       delete payload.batteryHealth;
     }
     ["box", "bill", "charger"].forEach(function (k) { payload[k] = payload[k] ? "Yes" : "No"; });
+    payload.photos = photos;
 
     var submitBtn = form.querySelector('button[type="submit"]');
     var originalText = submitBtn.textContent;
     submitBtn.disabled = true;
-    submitBtn.textContent = "Submitting...";
+    submitBtn.textContent = "Uploading photos...";
 
     fetch("/api/leads/sell", {
       method: "POST",

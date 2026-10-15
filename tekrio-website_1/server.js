@@ -80,6 +80,55 @@ function readLeads() {
 }
 
 // ---------------------------------------------------------------------
+// sell-request photos: the same six sides store managers photograph in
+// the app. The browser shrinks each to a JPEG (which also drops location
+// metadata) and sends it with the form as a data: URL; they're kept beside
+// leads.json in photos/<lead id>/<slot>.jpg, shown in /admin and passed on
+// to the app backend.
+// ---------------------------------------------------------------------
+const PHOTOS_DIR = path.join(DATA_DIR, "photos");
+const PHOTO_SLOTS = ["front", "back", "top", "bottom", "left", "right"];
+const REQUIRED_PHOTO_SLOTS = ["front", "back"];
+const MAX_PHOTO_BYTES = 2 * 1024 * 1024; // one shrunk photo is ~150-400 KB
+const SELL_BODY_MAX_BYTES = 10 * 1024 * 1024; // six photos as base64 + the form
+const LEAD_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+function photoPath(leadId, slot) {
+  return path.join(PHOTOS_DIR, leadId, `${slot}.jpg`);
+}
+// -> { ok, photos: { slot: Buffer } } or { ok: false, message }
+function parsePhotos(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return { ok: false, message: "Add photos of the front and back of your device." };
+  }
+  const photos = {};
+  for (const [slot, value] of Object.entries(raw)) {
+    if (!PHOTO_SLOTS.includes(slot)) return { ok: false, message: "Unknown photo." };
+    const match = /^data:image\/jpeg;base64,([A-Za-z0-9+/]+=*)$/.exec(typeof value === "string" ? value : "");
+    const bytes = match ? Buffer.from(match[1], "base64") : null;
+    // JPEG files start FF D8 FF; anything else isn't a photo the browser made
+    if (!bytes || bytes.length < 3 || bytes[0] !== 0xff || bytes[1] !== 0xd8 || bytes[2] !== 0xff) {
+      return { ok: false, message: `The ${slot} photo couldn't be read. Please choose it again.` };
+    }
+    if (bytes.length > MAX_PHOTO_BYTES) {
+      return { ok: false, message: `The ${slot} photo is too large. Please choose it again.` };
+    }
+    photos[slot] = bytes;
+  }
+  const missing = REQUIRED_PHOTO_SLOTS.find((slot) => !photos[slot]);
+  if (missing) return { ok: false, message: `Add a photo of the ${missing} of your device.` };
+  return { ok: true, photos };
+}
+async function savePhotos(leadId, photos) {
+  const dir = path.join(PHOTOS_DIR, leadId);
+  await fs.promises.mkdir(dir, { recursive: true, mode: 0o700 });
+  await Promise.all(
+    Object.entries(photos).map(([slot, bytes]) => fs.promises.writeFile(photoPath(leadId, slot), bytes, { mode: 0o600 }))
+  );
+  return PHOTO_SLOTS.filter((slot) => photos[slot]); // stored in slot order
+}
+
+// ---------------------------------------------------------------------
 // simple per-IP rate limiter (in-memory) for the lead endpoints
 // ---------------------------------------------------------------------
 const RATE_WINDOW_MS = 60 * 1000;
@@ -109,6 +158,7 @@ function createRateLimiter(max) {
 }
 const leadLimiter = createRateLimiter(10); // lead submissions per IP per minute
 const adminLoginLimiter = createRateLimiter(10); // failed admin logins per IP per minute
+const offerLimiter = createRateLimiter(30); // offer page lookups/accepts per IP per minute
 
 // The client IP. X-Forwarded-For is only trusted behind our own proxy, and
 // then only its LAST entry: that's the one the proxy appended; anything to
@@ -147,7 +197,7 @@ const SCHEMAS = {
     optional: [],
   },
   sell: {
-    required: ["platform", "brand", "model", "storage", "name", "mobile", "address", "city", "pincode"],
+    required: ["platform", "brand", "model", "storage", "name", "mobile", "email", "address", "city", "pincode"],
     optional: [
       "ram", "batteryHealth", "screenDamage", "bodyScratches", "deviceAge",
       "box", "bill", "charger", "catalogVersion",
@@ -249,6 +299,132 @@ function forwardToAppApi(record) {
   } catch (e) {
     console.error("[app-api] forward error:", e.message);
   }
+}
+
+// ---------------------------------------------------------------------
+// TEKRIO app backend: website endpoints, authenticated with the shared
+// TEKRIO_BACKEND_API_KEY (no admin account involved). Resolves with the
+// backend's status and parsed JSON body; rejects only on network errors.
+// A Buffer body is sent as-is (photos); anything else as JSON.
+// ---------------------------------------------------------------------
+function backendRequest(method, endpoint, payload, { contentType, timeoutMs = 8000, maxBytes = 64 * 1024 } = {}) {
+  return new Promise((resolve, reject) => {
+    const target = new URL(CONFIG.BACKEND_API_BASE_URL.replace(/\/$/, "") + endpoint);
+    const lib = target.protocol === "https:" ? require("https") : http;
+    const body = Buffer.isBuffer(payload) ? payload : Buffer.from(JSON.stringify(payload));
+    const req = lib.request(
+      target,
+      {
+        method,
+        timeout: timeoutMs,
+        headers: {
+          "Content-Type": contentType || "application/json",
+          "Content-Length": body.length,
+          "X-Api-Key": CONFIG.BACKEND_API_KEY,
+        },
+      },
+      (res) => {
+        let raw = "";
+        res.on("data", (c) => {
+          raw += c;
+          if (raw.length > maxBytes) req.destroy(new Error("response too large"));
+        });
+        res.on("end", () => {
+          let json = null;
+          try {
+            json = JSON.parse(raw);
+          } catch (e) {
+            // non-JSON (proxy error page etc.): status alone tells the story
+          }
+          resolve({ status: res.statusCode, body: json });
+        });
+      }
+    );
+    req.on("timeout", () => req.destroy(new Error("timeout")));
+    req.on("error", reject);
+    req.end(body);
+  });
+}
+const postBackend = (endpoint, payload) => backendRequest("POST", endpoint, payload);
+
+// A sell request becomes a live listing in the vendor app, in three calls:
+// create it (the backend makes the device in its "TEKRIO Online" store),
+// upload each photo, then mark it ready, which opens bidding, so vendors
+// never see a listing whose photos are still on their way. Every call is
+// idempotent on leadId (+ slot), so the whole run is simply retried on a
+// timeout. Retries live in memory only; a request that still fails stays
+// in leads.json and /admin, and the log line names its reference.
+const SELL_RETRY_DELAYS_MS = [60 * 1000, 5 * 60 * 1000];
+class BackendRejected extends Error {}
+async function sendSellRequest(record) {
+  const check = ({ status, body }) => {
+    if (status === 200 || status === 201) return;
+    const reason = (body && body.error && body.error.message) || `HTTP ${status}`;
+    // 4xx means the backend rejected this request as-is: retrying won't help.
+    // Except 409 (e.g. PHOTOS_MISSING on ready: the next run re-uploads them)
+    // and 429 (rate limited), which a later run can get past.
+    if (status >= 400 && status < 500 && status !== 409 && status !== 429) throw new BackendRejected(reason);
+    throw new Error(reason);
+  };
+  const lead = encodeURIComponent(record.id);
+  const photos = record.photos || [];
+  check(await postBackend("/sell-requests", sellRequestPayload(record)));
+  for (const slot of photos) {
+    const jpeg = await fs.promises.readFile(photoPath(record.id, slot));
+    check(await backendRequest("PUT", `/sell-requests/${lead}/photos/${slot}`, jpeg, {
+      contentType: "image/jpeg",
+      timeoutMs: 20000,
+    }));
+  }
+  check(await postBackend(`/sell-requests/${lead}/ready`, { photos }));
+}
+function forwardSellRequest(record, attempt = 0) {
+  if (!CONFIG.BACKEND_API_KEY) return; // backend intake not switched on yet
+  sendSellRequest(record).catch((e) => {
+    if (e instanceof BackendRejected) {
+      console.error(`[sell-request] ${record.reference} rejected by the app backend: ${e.message}`);
+      return;
+    }
+    const delay = SELL_RETRY_DELAYS_MS[attempt];
+    if (delay === undefined) {
+      console.error(`[sell-request] ${record.reference} not listed in the app (${e.message}); follow up from /admin.`);
+      return;
+    }
+    console.warn(`[sell-request] ${record.reference} listing failed (${e.message}); retrying in ${delay / 1000}s.`);
+    setTimeout(() => forwardSellRequest(record, attempt + 1), delay).unref();
+  });
+}
+function sellRequestPayload(record) {
+  return {
+    leadId: record.id,
+    reference: record.reference,
+    seller: {
+      name: record.name,
+      phone: record.mobile,
+      email: record.email,
+      address: record.address,
+      city: record.city,
+      pincode: record.pincode,
+    },
+    device: {
+      platform: record.platform,
+      brand: record.brand,
+      model: record.model,
+      storage: record.storage,
+      ram: record.ram || "",
+      batteryHealth: record.batteryHealth ? Number(record.batteryHealth) : null,
+      catalogVersion: record.catalogVersion || "",
+      answers: {
+        screenDamage: record.screenDamage,
+        bodyScratches: record.bodyScratches,
+        deviceAge: record.deviceAge,
+        box: record.box,
+        bill: record.bill,
+        charger: record.charger,
+      },
+    },
+    photos: record.photos || [],
+  };
 }
 
 // ---------------------------------------------------------------------
@@ -587,7 +763,7 @@ const PLATFORM_NAMES = { apple: "Apple (iPhone)", android: "Android" };
 // fields with their own column, or not meant for the table
 const LEAD_TABLE_SKIP = new Set([
   "id", "reference", "type", "createdAt", "ip", "name", "storeName", "businessName",
-  "mobile", "city", "catalogVersion", "device", ...Object.keys(DEVICE_FIELD_LABELS),
+  "mobile", "city", "catalogVersion", "device", "photos", ...Object.keys(DEVICE_FIELD_LABELS),
 ]);
 // Device cell: a one-line summary that opens to every device field. The old
 // customer form only collected a free-text device name, shown as-is.
@@ -600,7 +776,15 @@ function deviceCell(lead) {
   const rows = fields
     .map((k) => `<dt>${escapeHtml(DEVICE_FIELD_LABELS[k])}</dt><dd>${escapeHtml(value(k))}</dd>`)
     .join("");
-  return `<details class="device"><summary>${escapeHtml(summary || "View device")}</summary><dl>${rows}</dl></details>`;
+  const photos = (Array.isArray(lead.photos) ? lead.photos : [])
+    .filter((slot) => PHOTO_SLOTS.includes(slot))
+    .map((slot) => {
+      const url = `/admin/photos/${encodeURIComponent(lead.id)}/${slot}.jpg`;
+      return `<a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="${slot}" loading="lazy"><span>${slot}</span></a>`;
+    })
+    .join("");
+  const gallery = photos ? `<div class="photos">${photos}</div>` : "";
+  return `<details class="device"><summary>${escapeHtml(summary || "View device")}${photos ? ` · ${lead.photos.length} photos` : ""}</summary><dl>${rows}</dl>${gallery}</details>`;
 }
 // the admin script's URL changes with its contents, so browsers never run a stale copy
 let adminScriptVersion = null;
@@ -691,6 +875,9 @@ details.device summary:hover { text-decoration:underline; }
 details.device dl { display:grid; grid-template-columns:auto 1fr; gap:4px 12px; margin:10px 0 0; padding:10px 12px; background:var(--paper); border-radius:var(--radius-s); }
 details.device dt { color:var(--slate); white-space:nowrap; }
 details.device dd { margin:0; }
+details.device .photos { display:grid; grid-template-columns:repeat(3, 72px); gap:8px; margin-top:10px; }
+details.device .photos a { display:block; text-align:center; font-size:0.75rem; color:var(--slate); text-decoration:none; }
+details.device .photos img { display:block; width:72px; height:72px; object-fit:cover; border-radius:var(--radius-s); border:1px solid var(--line); }
 .two-col.stats-row { grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); margin-bottom:32px; }
 .lead-controls { display:grid; gap:12px; margin-bottom:12px; }
 @media (min-width: 760px) { .lead-controls { grid-template-columns: 2fr 1fr 1fr; } }
@@ -789,7 +976,7 @@ const server = http.createServer(async (req, res) => {
       }
       let raw;
       try {
-        raw = await readBody(req);
+        raw = await readBody(req, type === "sell" ? SELL_BODY_MAX_BYTES : undefined);
       } catch (e) {
         res.setHeader("Connection", "close");
         return sendJson(res, 413, { message: "Request too large." });
@@ -804,6 +991,10 @@ const server = http.createServer(async (req, res) => {
       if (!result.ok) {
         return sendJson(res, 400, { message: result.message });
       }
+      const photos = type === "sell" ? parsePhotos(body.photos) : null;
+      if (photos && !photos.ok) {
+        return sendJson(res, 400, { message: photos.message });
+      }
       const id = crypto.randomUUID();
       const record = {
         id,
@@ -814,12 +1005,15 @@ const server = http.createServer(async (req, res) => {
         ip,
       };
       try {
+        if (photos) record.photos = await savePhotos(id, photos.photos);
         await appendLead(record);
       } catch (e) {
+        if (photos) fs.promises.rm(path.join(PHOTOS_DIR, id), { recursive: true, force: true }).catch(() => {});
         console.error("Failed to save lead:", e);
         return sendJson(res, 500, { message: "Could not save your submission. Please try again." });
       }
       forwardToAppApi(record); // no-op until APP_API_WEBHOOK_URL is configured
+      if (type === "sell") forwardSellRequest(record); // no-op until BACKEND_API_KEY is set
       return sendJson(res, 200, {
         message: "Thanks! Our team will reach out shortly.",
         reference: record.reference,
@@ -837,9 +1031,63 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
+    // ---- seller offer page (/offer): look up / accept the emailed offer ----
+    // The token comes from the email link's #fragment and is posted in the
+    // body, so it never lands in URLs, logs or Referer headers.
+    const OFFER_ACTIONS = {
+      "/api/offer": "/seller-offers/lookup",
+      "/api/offer/accept": "/seller-offers/accept",
+      "/api/offer/paid": "/seller-offers/paid", // seller confirms the buyer paid them
+      "/api/offer/revision": "/seller-offers/revision", // accept/decline a revised price
+      "/api/offer/cancel": "/seller-offers/cancel",
+      "/api/offer/checkin": "/seller-offers/checkin", // "did you sell?" after a missed handover
+    };
+    if (OFFER_ACTIONS[pathname] && req.method === "POST") {
+      res.setHeader("Cache-Control", "no-store");
+      res.setHeader("X-Robots-Tag", "noindex, nofollow");
+      const contentType = String(req.headers["content-type"] || "").split(";")[0].trim();
+      if (contentType !== "application/json") {
+        return sendJson(res, 415, { message: "Unsupported content type." });
+      }
+      if (offerLimiter.hit(ip)) {
+        return sendJson(res, 429, { message: "Too many requests. Please try again in a minute." });
+      }
+      if (!CONFIG.BACKEND_API_KEY) {
+        return sendJson(res, 503, { message: "Offers aren't available online yet. Please call us." });
+      }
+      let input;
+      try {
+        input = JSON.parse((await readBody(req, 4096)) || "{}");
+      } catch (e) {
+        return sendJson(res, 400, { message: "Invalid request." });
+      }
+      const token = String((input && input.token) || "");
+      if (!/^[A-Za-z0-9_-]{20,200}$/.test(token)) {
+        return sendJson(res, 404, { code: "OFFER_NOT_FOUND", message: "This offer link isn't valid." });
+      }
+      // only these plain fields go on to the backend
+      const forward = { token };
+      ["decision", "reason", "note", "answer"].forEach((k) => {
+        if (typeof input[k] === "string") forward[k] = input[k].slice(0, 500);
+      });
+      try {
+        const { status, body } = await postBackend(OFFER_ACTIONS[pathname], forward);
+        if (status === 200 && body && body.data) return sendJson(res, 200, { data: body.data });
+        const error = (body && body.error) || {};
+        if (status >= 400 && status < 500) {
+          return sendJson(res, status, { code: error.code || "", message: error.message || "This offer can't be opened." });
+        }
+        console.error(`[offer] backend returned HTTP ${status}`);
+      } catch (e) {
+        console.error("[offer] backend unreachable:", e.message);
+      }
+      return sendJson(res, 502, { message: "We couldn't load your offer right now. Please try again shortly." });
+    }
+
     // ---- admin dashboard ----
     const isAdmin = pathname === "/admin" || pathname === "/admin/";
-    if (isAdmin || pathname === "/api/admin/leads") {
+    const adminPhoto = /^\/admin\/photos\/([^/]+)\/([a-z]+)\.jpg$/.exec(pathname);
+    if (isAdmin || adminPhoto || pathname === "/api/admin/leads") {
       // personal data: never cache, never index
       res.setHeader("Cache-Control", "no-store");
       res.setHeader("X-Robots-Tag", "noindex, nofollow");
@@ -852,6 +1100,15 @@ const server = http.createServer(async (req, res) => {
       if (!checkBasicAuth(req)) {
         if (req.headers["authorization"]) adminLoginLimiter.hit(ip);
         return requireAuth(res);
+      }
+      if (adminPhoto) {
+        const [, leadId, slot] = adminPhoto;
+        if (!LEAD_ID_RE.test(leadId) || !PHOTO_SLOTS.includes(slot)) return serve404(res);
+        return fs.readFile(photoPath(leadId, slot), (err, jpeg) => {
+          if (err) return serve404(res);
+          res.writeHead(200, { "Content-Type": "image/jpeg", "Content-Length": jpeg.length });
+          res.end(req.method === "HEAD" ? undefined : jpeg);
+        });
       }
       if (isAdmin) {
         res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
