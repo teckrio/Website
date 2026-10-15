@@ -6,10 +6,11 @@
   // Referer header. It's posted to this site's /api/offer endpoints, which
   // pass it on to the TEKRIO app backend.
   //
-  // After accepting, the winning buyer collects the phone from the seller's
-  // address and pays them on the spot. This page then shows the buyer, any lower
-  // price the buyer proposes, and, once the seller confirms payment, the code
-  // the buyer enters to complete the sale.
+  // After accepting, the seller gets a handover code; the winning buyer
+  // collects the phone from the seller's address, enters the code in the
+  // TEKRIO app and pays them on the spot. This page shows the buyer, the code,
+  // any lower price the buyer proposes and, once the phone is collected,
+  // "I've been paid" / "I haven't been paid".
   var card = document.querySelector(".offer-card");
   if (!card) return;
 
@@ -56,25 +57,21 @@
     fill("data-offer-deadline", when(h.deadlineAt));
     fill("data-offer-vendor-name", vendor.name || "the buyer");
     fill("data-offer-vendor-address", "They'll call you to agree a pickup time at the address you gave.");
-    var phone = card.querySelector("[data-offer-vendor-phone]");
-    if (phone) {
+    fill("data-offer-confirm-by", when(h.paymentConfirmDeadlineAt));
+    card.querySelectorAll("[data-offer-vendor-phone]").forEach(function (phone) {
       phone.textContent = vendor.phone ? "Call " + vendor.phone : "";
       if (vendor.phone) phone.href = "tel:+91" + vendor.phone;
       else phone.removeAttribute("href");
-    }
+    });
     var revision = card.querySelector("[data-offer-revision]");
     revision.hidden = !h.revision;
     if (h.revision) {
       fill("data-offer-revision-amount", rupees(h.revision.amountPaise));
       fill("data-offer-revision-reason", h.revision.reason || "");
     }
-    var codeBox = card.querySelector("[data-offer-code-box]");
-    codeBox.hidden = !h.code;
+    // the code waits until the seller has decided on a revised price
+    card.querySelector("[data-offer-code-box]").hidden = !h.code || Boolean(h.revision);
     fill("data-offer-code", h.code || "");
-    // the "I've been paid" step waits for any revised price, then gives way to the code
-    card.querySelector("[data-offer-pay-step]").hidden = Boolean(h.code || h.revision);
-    // once paid, cancelling is done through TEKRIO, not this page
-    card.querySelector("[data-offer-cancel-box]").hidden = Boolean(h.sellerPaidConfirmed);
   }
 
   function render(offer) {
@@ -86,7 +83,7 @@
     fill("data-offer-expires", when(offer.expiresAt));
     if (offer.handover) renderHandover(offer);
     if (offer.status === "awaiting_seller") return show("open");
-    if (["accepted", "checkin", "completed", "review"].indexOf(offer.status) >= 0) return show(offer.status);
+    if (["accepted", "collected", "checkin", "completed", "review"].indexOf(offer.status) >= 0) return show(offer.status);
     var text = CLOSED[offer.status] || CLOSED.closed;
     closed(text[0], text[1]);
   }
@@ -127,7 +124,8 @@
   // Every action is an explicit button press (a POST), never the link itself:
   // email security scanners open links automatically and must not act.
   var CONFIRM = {
-    paid: "Confirm that the buyer has paid you? You'll then get the code that completes the sale.",
+    "paid:paid": "Confirm that the buyer has paid you in full? This completes the sale.",
+    "paid:not_paid": "Tell TEKRIO you haven't been paid? Our team will contact you and the buyer.",
     "revision:decline": "Decline the new price? The sale will be cancelled and you keep your phone.",
     "cancel:changed_mind": "Cancel this sale? You keep your phone and nothing more is needed.",
     "checkin:sold": "Confirm you sold the phone to this buyer?",
@@ -141,7 +139,11 @@
     var statusEl = section.querySelector("[data-offer-status]");
     var extra = {};
     if (action === "revision") extra.decision = value;
-    if (action === "checkin") extra.answer = value;
+    if (action === "checkin" || action === "paid") extra.answer = value;
+    if (action === "paid" && value === "not_paid") {
+      var unpaid = card.querySelector("[data-offer-unpaid-note]");
+      if (unpaid.value.trim()) extra.note = unpaid.value.trim();
+    }
     if (action === "cancel") {
       extra.reason = value;
       var note = card.querySelector("[data-offer-note]");

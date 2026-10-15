@@ -93,6 +93,16 @@ faked:
      bid and an **Accept** button. It talks to this server's
      `POST /api/offer` and `POST /api/offer/accept`, which pass the token to
      the backend's `/seller-offers/lookup` and `/seller-offers/accept`.
+   - after accepting, the same page shows the seller a 6-digit handover code.
+     The buyer collects the phone from the seller's address, enters the code
+     and IMEIs in the vendor app (the sale is then "collected") and pays the
+     seller. The page then asks "Did they pay you?": `POST /api/offer/paid`
+     with `answer: paid` completes the sale, `answer: not_paid` sends it to
+     TEKRIO review; with no answer the backend completes it after 24 hours
+     (`SELLER_PAYMENT_CONFIRM_HOURS`). The page also handles a lower price
+     proposed at pickup (`/api/offer/revision`), cancelling or reporting the
+     buyer (`/api/offer/cancel`) and the "did you sell?" check-in after a
+     missed pickup (`/api/offer/checkin`).
    The token lives in the URL `#fragment` and request bodies only, so it
    never appears in server logs, Referer headers or Google Analytics.
    Until the key is set, sell requests stay local and `/offer` says offers

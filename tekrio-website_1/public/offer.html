@@ -98,14 +98,14 @@
         <p class="offer-device" data-offer-device></p>
         <p class="offer-amount" data-offer-amount></p>
         <p class="form-sub">Reference <strong data-offer-ref></strong> &middot; accept by <strong data-offer-expires></strong></p>
-        <p>After you accept, the buyer contacts you and collects the phone from your address within 60 minutes. They check it and pay you on the spot, by UPI or cash.</p>
+        <p>After you accept, you get a handover code here. The buyer calls you and collects the phone from your address within 60 minutes: they check it, you give them the code, and they pay you on the spot by UPI or cash. Then you confirm here that you've been paid.</p>
         <p class="price-note"><strong>Please note:</strong> if the phone's condition differs from what you described, the buyer can propose a lower price. You decide whether to accept it; you're never obliged to sell.</p>
         <button type="button" class="btn btn-gold" data-offer-accept>Accept this offer</button>
         <p class="form-status" role="status" data-offer-status></p>
         <p class="form-note">Don't want to sell? Just ignore this offer; it expires on its own. Questions? Email <a href="mailto:info@tekrio.in">info@tekrio.in</a>.</p>
       </div>
 
-      <!-- accepted: handover at the buyer's shop -->
+      <!-- accepted: the buyer collects from the seller's address -->
       <div data-offer-state="accepted" hidden>
         <span class="eyebrow-stamp is-light">Offer accepted</span>
         <h2>Your buyer will collect the phone</h2>
@@ -119,7 +119,7 @@
           <p><a data-offer-vendor-phone></a></p>
         </div>
 
-        <!-- the buyer proposed a lower price at the shop -->
+        <!-- the buyer proposed a lower price at pickup -->
         <div class="offer-box" data-offer-revision hidden>
           <p><strong>The buyer proposed a new price: <span data-offer-revision-amount></span></strong></p>
           <p class="form-sub">Reason: <span data-offer-revision-reason></span></p>
@@ -129,22 +129,19 @@
           </div>
         </div>
 
-        <!-- after payment: the code the buyer needs to close the sale -->
+        <!-- the code the buyer enters in the TEKRIO app when they take the phone -->
         <div class="offer-box offer-code-box" data-offer-code-box hidden>
-          <p>Give this code to the buyer to complete the sale:</p>
+          <p>Your handover code</p>
           <p class="offer-code" data-offer-code></p>
-          <p class="form-note">Only share it once you've received your money.</p>
+          <p class="form-note">Give it to the buyer in person when you hand over the phone. Never share it over a call or message.</p>
         </div>
 
-        <div data-offer-pay-step>
-          <ol class="next-list">
-            <li><strong>Get ready</strong> &mdash; the buyer will call to agree a time. Keep the phone, its accessories and a government photo ID ready.</li>
-            <li><strong>The buyer comes to you</strong>, checks the phone and records your ID in the TEKRIO app.</li>
-            <li><strong>Get paid</strong> by the buyer, by UPI or cash.</li>
-            <li><strong>Confirm payment here</strong>; you'll get a code to give the buyer, which completes the sale.</li>
-          </ol>
-          <button type="button" class="btn btn-gold" data-offer-action="paid">I've been paid <span data-offer-handover-amount></span></button>
-        </div>
+        <ol class="next-list">
+          <li><strong>Get ready</strong> &mdash; the buyer will call to agree a time. Keep the phone, its accessories and a government photo ID ready.</li>
+          <li><strong>The buyer comes to you</strong>, checks the phone and records your ID in the TEKRIO app.</li>
+          <li><strong>Hand over the phone with your code.</strong> The buyer enters it in the app.</li>
+          <li><strong>Get paid</strong> by the buyer on the spot, by UPI or cash, then confirm it on this page.</li>
+        </ol>
         <p class="form-status" role="status" data-offer-status></p>
 
         <details class="offer-more" data-offer-cancel-box>
@@ -155,6 +152,28 @@
           <p><button type="button" class="btn btn-outline-dark" data-offer-action="cancel" data-value="vendor_problem">Report a problem</button></p>
         </details>
         <p class="form-note">Tip: back up your data and sign out of your accounts before the pickup. Questions? Email <a href="mailto:info@tekrio.in">info@tekrio.in</a>.</p>
+      </div>
+
+      <!-- collected: the seller confirms the payment -->
+      <div data-offer-state="collected" hidden>
+        <span class="eyebrow-stamp is-light">Phone collected</span>
+        <h2>Did <span data-offer-vendor-name></span> pay you?</h2>
+        <p class="offer-device" data-offer-device></p>
+        <p class="offer-amount" data-offer-handover-amount></p>
+        <p>The buyer has collected your phone. Once <span data-offer-handover-amount></span> is in your account or in your hand, confirm it below.</p>
+        <div class="offer-actions">
+          <button type="button" class="btn btn-gold" data-offer-action="paid" data-value="paid">I've been paid <span data-offer-handover-amount></span></button>
+        </div>
+        <p class="form-status" role="status" data-offer-status></p>
+        <p class="form-sub">Reference <strong data-offer-ref></strong> &middot; if we don't hear from you by <strong data-offer-confirm-by></strong>, we'll take it that you were paid.</p>
+
+        <details class="offer-more">
+          <summary>Haven't been paid?</summary>
+          <p>Call the buyer first: <a data-offer-vendor-phone></a>. If they still don't pay, tell us and our team will step in.</p>
+          <label for="offer-unpaid-note">What happened? (optional)</label>
+          <textarea id="offer-unpaid-note" rows="3" maxlength="500" data-offer-unpaid-note></textarea>
+          <p><button type="button" class="btn btn-outline-dark" data-offer-action="paid" data-value="not_paid">I haven't been paid</button></p>
+        </details>
       </div>
 
       <!-- check-in after a missed handover -->
@@ -196,7 +215,7 @@
   </div>
 </section>
 
-<script src="/js/offer.js?v=08dabef7" defer></script>
+<script src="/js/offer.js?v=5773f5e1" defer></script>
 
 </main>
 <footer class="site-footer">
