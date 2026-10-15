@@ -215,12 +215,50 @@
     window.scrollTo({ top: 0, behavior: reduceMotion.matches ? "auto" : "smooth" });
   });
 
+  // ---------- sticky "sell" bar on phones (CSS hides it on wider screens) ----------
+  // Shows once the visitor scrolls past the hero; hides again near the
+  // page's own sell buttons (CTA band, footer) and never shows on /sell.
+  if (!/^\/sell/.test(location.pathname)) {
+    var sellBar = document.createElement("div");
+    sellBar.className = "mobile-sell-bar";
+    sellBar.setAttribute("role", "region");
+    sellBar.setAttribute("aria-label", "Sell your device");
+    sellBar.innerHTML =
+      '<span>Get the best offer for your device</span><a href="/sell.html" class="btn btn-gold">Sell now</a>';
+    sellBar.inert = true;
+    document.body.appendChild(sellBar);
+    var endZoneInView = false;
+    var updateSellBar = function () {
+      var show = window.scrollY > 480 && !endZoneInView;
+      sellBar.classList.toggle("is-shown", show);
+      sellBar.inert = !show;
+      document.body.classList.toggle("has-sell-bar", show);
+    };
+    if ("IntersectionObserver" in window) {
+      var endZones = document.querySelectorAll(".cta-band, .site-footer");
+      var inView = new Set();
+      var endObserver = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) inView.add(entry.target);
+          else inView.delete(entry.target);
+        });
+        endZoneInView = inView.size > 0;
+        updateSellBar();
+      });
+      endZones.forEach(function (el) {
+        endObserver.observe(el);
+      });
+    }
+    window.addEventListener("scroll", updateSellBar, { passive: true });
+    updateSellBar();
+  }
+
   // ---------- scroll-reveal on repeated content (steps, cards, marks, etc.) ----------
   // Progressive enhancement only: every element below is already fully visible
   // without JS/CSS support, this just animates it into place as it scrolls in.
   if ("IntersectionObserver" in window && !reduceMotion.matches) {
     var revealTargets = document.querySelectorAll(
-      ".section-head, .cta-band .container, .form-card, .story .section-head, .contact-grid, .two-col"
+      ".section-head, .cta-band .container, .form-card, .story .section-head, .contact-grid, .two-col, .compare-wrap"
     );
     var revealGroups = document.querySelectorAll(
       ".steps, .marks-grid, .card-grid, .audience-grid"

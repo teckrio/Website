@@ -8,6 +8,7 @@ const ORG_SCHEMA = `<script type="application/ld+json">
   "url": "https://www.tekrio.in",
   "logo": "https://www.tekrio.in/images/logo.png",
   "email": "info@tekrio.in",
+  "sameAs": ["https://www.instagram.com/tekrio_/", "https://www.facebook.com/profile.php?id=61595333512484"],
   "telephone": ["+91-9845127927", "+91-9060805052", "+91-9035566685", "+91-9916311144"],
   "address": {
     "@type": "PostalAddress",
