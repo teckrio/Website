@@ -184,4 +184,255 @@
         });
     });
   });
+
+  // ---------- header shadow once the page scrolls ----------
+  var siteHeader = document.querySelector(".site-header");
+  if (siteHeader) {
+    var updateHeaderShadow = function () {
+      siteHeader.classList.toggle("is-scrolled", window.scrollY > 8);
+    };
+    updateHeaderShadow();
+    window.addEventListener("scroll", updateHeaderShadow, { passive: true });
+  }
+
+  // ---------- back-to-top button (injected, no template changes needed) ----------
+  var backToTop = document.createElement("button");
+  backToTop.className = "back-to-top";
+  backToTop.type = "button";
+  backToTop.setAttribute("aria-label", "Back to top");
+  backToTop.innerHTML =
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  document.body.appendChild(backToTop);
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  window.addEventListener(
+    "scroll",
+    function () {
+      backToTop.classList.toggle("show", window.scrollY > 600);
+    },
+    { passive: true }
+  );
+  backToTop.addEventListener("click", function () {
+    window.scrollTo({ top: 0, behavior: reduceMotion.matches ? "auto" : "smooth" });
+  });
+
+  // ---------- scroll-reveal on repeated content (steps, cards, marks, etc.) ----------
+  // Progressive enhancement only: every element below is already fully visible
+  // without JS/CSS support, this just animates it into place as it scrolls in.
+  if ("IntersectionObserver" in window && !reduceMotion.matches) {
+    var revealTargets = document.querySelectorAll(
+      ".section-head, .cta-band .container, .form-card, .story .section-head, .contact-grid, .two-col"
+    );
+    var revealGroups = document.querySelectorAll(
+      ".steps, .marks-grid, .card-grid, .audience-grid"
+    );
+    // Positive bottom rootMargin fires the reveal while the content is still
+    // just below the viewport, so it's already animating by the time it's seen
+    // instead of waiting for it to sit mostly in view first.
+    // Toggle (not a one-time add) so content keeps popping in every time it
+    // scrolls into view, not just the first time the page loads.
+    var revealObserver = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          entry.target.classList.toggle("is-visible", entry.isIntersecting);
+        });
+      },
+      { threshold: 0.01, rootMargin: "0px 0px 180px 0px" }
+    );
+    revealTargets.forEach(function (el) {
+      el.classList.add("reveal");
+      revealObserver.observe(el);
+    });
+    revealGroups.forEach(function (el) {
+      el.classList.add("reveal-group");
+      revealObserver.observe(el);
+    });
+  }
+
+  // Everything below is motion only. With reduced motion the markup's
+  // finished state is what people see (all offers in, rail full, text lit).
+  var motionOK = !reduceMotion.matches;
+  function clamp01(n) {
+    return n < 0 ? 0 : n > 1 ? 1 : n;
+  }
+
+  // ---------- hero: buyer offers stack up, then the best one is picked ----------
+  var offerCard = document.querySelector("[data-offer-stack]");
+  if (offerCard && motionOK && "IntersectionObserver" in window) {
+    var offerItems = offerCard.querySelectorAll(".dc-offer-item");
+    var bestItem = offerCard.querySelector("[data-best]");
+    var countEl = offerCard.querySelector("[data-offer-count]");
+    var offerTimers = [];
+    var offerPlaying = false;
+    var later = function (fn, ms) {
+      offerTimers.push(setTimeout(fn, ms));
+    };
+    var setCount = function (n) {
+      if (countEl) countEl.textContent = n + (n === 1 ? " buyer" : " buyers");
+    };
+    var resetOffers = function () {
+      offerItems.forEach(function (item) {
+        item.classList.remove("is-in", "is-gone");
+      });
+      bestItem.classList.remove("is-best", "is-final");
+      offerCard.classList.remove("is-picked");
+      setCount(0);
+    };
+    var playOffers = function () {
+      resetOffers();
+      offerItems.forEach(function (item, i) {
+        later(function () {
+          item.classList.add("is-in");
+          setCount(i + 1);
+        }, 500 + i * 750);
+      });
+      // highlight the highest bid, then fold the rest away so the
+      // customer is left with just the best offer
+      var pickAt = 500 + offerItems.length * 750 + 400;
+      later(function () {
+        bestItem.classList.add("is-best");
+      }, pickAt);
+      later(function () {
+        offerItems.forEach(function (item) {
+          if (item !== bestItem) item.classList.add("is-gone");
+        });
+        bestItem.classList.add("is-final");
+        offerCard.classList.add("is-picked");
+      }, pickAt + 1300);
+      // hold the finished card, clear it, and go again
+      later(function () {
+        bestItem.classList.remove("is-in");
+      }, pickAt + 5300);
+      later(playOffers, pickAt + 6000);
+    };
+    var stopOffers = function () {
+      offerTimers.forEach(clearTimeout);
+      offerTimers = [];
+    };
+    // pin the list at its full four-offer height so the card keeps its
+    // size while bids fold away
+    var offerList = offerCard.querySelector(".dc-offers");
+    offerList.style.minHeight = offerList.offsetHeight + "px";
+    offerCard.classList.add("is-animating");
+    resetOffers();
+    // only run while the hero is on screen and the tab is visible
+    var offerVisible = false;
+    var syncOffers = function () {
+      var shouldPlay = offerVisible && !document.hidden;
+      if (shouldPlay && !offerPlaying) playOffers();
+      if (!shouldPlay && offerPlaying) stopOffers();
+      offerPlaying = shouldPlay;
+    };
+    new IntersectionObserver(function (entries) {
+      offerVisible = entries[0].isIntersecting;
+      syncOffers();
+    }).observe(offerCard);
+    document.addEventListener("visibilitychange", syncOffers);
+  }
+
+  // ---------- brand strip: endless scroll ----------
+  document.querySelectorAll("[data-marquee]").forEach(function (marquee) {
+    if (!motionOK) return;
+    var track = marquee.querySelector(".marquee-track");
+    // second copy is for the seamless loop only; screen readers skip it
+    Array.prototype.slice.call(track.children).forEach(function (li) {
+      var copy = li.cloneNode(true);
+      copy.setAttribute("aria-hidden", "true");
+      track.appendChild(copy);
+    });
+    marquee.classList.add("is-running");
+  });
+
+  // ---------- glow that follows the pointer on cards ----------
+  if (window.matchMedia("(hover: hover)").matches) {
+    document.querySelectorAll(".audience-col, .card-grid .card").forEach(function (card) {
+      card.addEventListener("pointermove", function (e) {
+        var r = card.getBoundingClientRect();
+        card.style.setProperty("--mx", e.clientX - r.left + "px");
+        card.style.setProperty("--my", e.clientY - r.top + "px");
+      });
+    });
+  }
+
+  // ---------- scroll-linked: step timelines and the lit statement ----------
+  var timelines = Array.prototype.slice.call(document.querySelectorAll(".steps-5"));
+  var statements = Array.prototype.slice.call(document.querySelectorAll("[data-scroll-statement]"));
+
+  timelines.forEach(function (steps) {
+    steps.classList.add("has-rail");
+    if (!motionOK) {
+      steps.style.setProperty("--progress", 1);
+      steps.querySelectorAll(".step").forEach(function (s) {
+        s.classList.add("is-reached");
+      });
+    }
+  });
+
+  if (motionOK) {
+    // split the statement into words so each one can light up in turn
+    statements.forEach(function (el) {
+      var words = el.textContent.trim().split(/\s+/);
+      el.textContent = "";
+      words.forEach(function (word, i) {
+        var span = document.createElement("span");
+        span.className = "sw";
+        span.textContent = word;
+        el.appendChild(span);
+        if (i < words.length - 1) el.appendChild(document.createTextNode(" "));
+      });
+    });
+
+    var narrow = window.matchMedia("(max-width: 799px)");
+    var wide = window.matchMedia("(min-width: 1100px)");
+    var ticking = false;
+    var updateScrollMotion = function () {
+      ticking = false;
+      var vh = window.innerHeight;
+
+      timelines.forEach(function (steps) {
+        var r = steps.getBoundingClientRect();
+        if (r.bottom < -vh || r.top > vh * 2) return;
+        var vertical = narrow.matches;
+        if (!vertical && !wide.matches) {
+          // tablet grid has no rail: every step counts as reached
+          steps.querySelectorAll(".step").forEach(function (s) {
+            s.classList.add("is-reached");
+          });
+          return;
+        }
+        // across: fill while the row climbs from 80% to 35% of the screen;
+        // down: fill as the column passes the 70% line
+        var p = vertical
+          ? clamp01((vh * 0.7 - r.top) / r.height)
+          : clamp01((vh * 0.8 - r.top) / (vh * 0.45));
+        steps.style.setProperty("--progress", p.toFixed(3));
+        steps.querySelectorAll(".step").forEach(function (s) {
+          var at = vertical
+            ? (s.offsetTop + 45) / steps.clientHeight
+            : (s.offsetLeft + 25) / steps.clientWidth;
+          s.classList.toggle("is-reached", p >= at);
+        });
+      });
+
+      statements.forEach(function (el) {
+        var r = el.getBoundingClientRect();
+        if (r.bottom < -vh || r.top > vh * 2) return;
+        // lit from when its top reaches 85% of the screen until its bottom reaches 55%
+        var p = clamp01((vh * 0.85 - r.top) / (vh * 0.3 + r.height));
+        var words = el.children;
+        var n = words.length;
+        for (var i = 0; i < n; i++) {
+          words[i].style.setProperty("--lit", clamp01(p * n - i).toFixed(2));
+        }
+      });
+    };
+    var requestScrollMotion = function () {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(updateScrollMotion);
+      }
+    };
+    window.addEventListener("scroll", requestScrollMotion, { passive: true });
+    window.addEventListener("resize", requestScrollMotion);
+    updateScrollMotion();
+  }
 })();

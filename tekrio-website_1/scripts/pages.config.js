@@ -27,7 +27,7 @@ module.exports = [
     active: "home",
     title: "TEKRIO - Pre-Owned Device Marketplace | Sell Your Device",
     description:
-      "Sell your pre-owned phone on TEKRIO, online or at a partnered store. Verified buyers compete for your device and you decide whether to accept the best offer.",
+      "Sell your pre-owned phone or device on TEKRIO. Verified buyers make offers through trusted partnered stores, and you get the highest offer.",
     schema: ORG_SCHEMA,
   },
   {
@@ -44,7 +44,7 @@ module.exports = [
     active: "how",
     title: "How TEKRIO Works - Select, Add Details, Get Offers | TEKRIO",
     description:
-      "Select your device, add details, get offers from verified buyers, choose an offer and complete the transaction - see how the TEKRIO marketplace works.",
+      "Select your device, add details, let verified buyers make offers, get your best offer and complete the transaction - see how the TEKRIO marketplace works.",
   },
   {
     file: "sell.html",
@@ -52,7 +52,7 @@ module.exports = [
     active: "sell",
     title: "Sell Your Device - Get Offers From Verified Buyers | TEKRIO",
     description:
-      "Sell your pre-owned phone online on TEKRIO. Add your device details and photos, get the best offer from verified buyers by email, and get paid at the buyer's shop.",
+      "Sell your pre-owned phone online on TEKRIO. Add your device details and photos, get the highest offer from verified buyers by email, and get paid at your doorstep.",
   },
   {
     file: "for-customers.html",
@@ -60,7 +60,7 @@ module.exports = [
     active: "customers",
     title: "Sell Your Old Phone or Device for the Right Price | TEKRIO",
     description:
-      "Sell your pre-owned device to verified buyers who compete for it. Accept the best offer and get paid at the buyer's shop or a TEKRIO partnered store.",
+      "Sell your pre-owned device for the highest of multiple verified buyers' offers, and complete the sale with doorstep pickup.",
   },
   {
     file: "for-retailers.html",

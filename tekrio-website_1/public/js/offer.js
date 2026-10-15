@@ -6,8 +6,8 @@
   // Referer header. It's posted to this site's /api/offer endpoints, which
   // pass it on to the TEKRIO app backend.
   //
-  // After accepting, the seller takes the phone to the winning buyer's shop
-  // and is paid there by the buyer. This page then shows the shop, any lower
+  // After accepting, the winning buyer collects the phone from the seller's
+  // address and pays them on the spot. This page then shows the buyer, any lower
   // price the buyer proposes, and, once the seller confirms payment, the code
   // the buyer enters to complete the sale.
   var card = document.querySelector(".offer-card");
@@ -55,8 +55,7 @@
     fill("data-offer-handover-amount", rupees(h.amountPaise));
     fill("data-offer-deadline", when(h.deadlineAt));
     fill("data-offer-vendor-name", vendor.name || "the buyer");
-    fill("data-offer-vendor-address", [vendor.shopAddress, vendor.shopCity].filter(Boolean).join(", ") ||
-      "Call the buyer for the shop address.");
+    fill("data-offer-vendor-address", "They'll call you to agree a pickup time at the address you gave.");
     var phone = card.querySelector("[data-offer-vendor-phone]");
     if (phone) {
       phone.textContent = vendor.phone ? "Call " + vendor.phone : "";

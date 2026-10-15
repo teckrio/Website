@@ -2,7 +2,7 @@
   <div class="container">
     <div class="breadcrumb"><a href="/">Home</a> / Your Offer</div>
     <h1>Your offer</h1>
-    <p>Bidding on your device has ended. Review the best offer from our verified buyers below.</p>
+    <p>Verified buyers have made their offers on your device. Here's the highest one.</p>
   </div>
 </section>
 
@@ -20,7 +20,7 @@
         <p class="offer-device" data-offer-device></p>
         <p class="offer-amount" data-offer-amount></p>
         <p class="form-sub">Reference <strong data-offer-ref></strong> &middot; accept by <strong data-offer-expires></strong></p>
-        <p>After you accept, you'll see the buyer's shop address and phone number. Take your phone there within 48 hours: the buyer checks it and pays you directly, by UPI or cash.</p>
+        <p>After you accept, the buyer contacts you and collects the phone from your address within 48 hours. They check it and pay you on the spot, by UPI or cash.</p>
         <p class="price-note"><strong>Please note:</strong> if the phone's condition differs from what you described, the buyer can propose a lower price. You decide whether to accept it; you're never obliged to sell.</p>
         <button type="button" class="btn btn-gold" data-offer-accept>Accept this offer</button>
         <p class="form-status" role="status" data-offer-status></p>
@@ -30,10 +30,10 @@
       <!-- accepted: handover at the buyer's shop -->
       <div data-offer-state="accepted" hidden>
         <span class="eyebrow-stamp is-light">Offer accepted</span>
-        <h2>Take your phone to the buyer</h2>
+        <h2>Your buyer will collect the phone</h2>
         <p class="offer-device" data-offer-device></p>
         <p class="offer-amount" data-offer-handover-amount></p>
-        <p class="form-sub">Reference <strong data-offer-ref></strong> &middot; visit by <strong data-offer-deadline></strong></p>
+        <p class="form-sub">Reference <strong data-offer-ref></strong> &middot; pickup by <strong data-offer-deadline></strong></p>
 
         <div class="offer-vendor">
           <p class="offer-vendor-name" data-offer-vendor-name></p>
@@ -60,8 +60,8 @@
 
         <div data-offer-pay-step>
           <ol class="next-list">
-            <li><strong>Visit the shop</strong> with the phone, its accessories and a government photo ID.</li>
-            <li><strong>The buyer checks the phone</strong> and records your ID in the TEKRIO app.</li>
+            <li><strong>Get ready</strong> &mdash; the buyer will call to agree a time. Keep the phone, its accessories and a government photo ID ready.</li>
+            <li><strong>The buyer comes to you</strong>, checks the phone and records your ID in the TEKRIO app.</li>
             <li><strong>Get paid</strong> by the buyer, by UPI or cash.</li>
             <li><strong>Confirm payment here</strong>; you'll get a code to give the buyer, which completes the sale.</li>
           </ol>
@@ -76,7 +76,7 @@
           <textarea id="offer-note" rows="3" maxlength="500" data-offer-note></textarea>
           <p><button type="button" class="btn btn-outline-dark" data-offer-action="cancel" data-value="vendor_problem">Report a problem</button></p>
         </details>
-        <p class="form-note">Tip: back up your data and sign out of your accounts before the visit. Questions? Email <a href="mailto:info@tekrio.in">info@tekrio.in</a>.</p>
+        <p class="form-note">Tip: back up your data and sign out of your accounts before the pickup. Questions? Email <a href="mailto:info@tekrio.in">info@tekrio.in</a>.</p>
       </div>
 
       <!-- check-in after a missed handover -->
