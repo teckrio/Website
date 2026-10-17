@@ -181,6 +181,10 @@
         message = "Enter a valid 6-digit pincode.";
       } else if (value && rule === "battery" && !/^(100|[1-9]?\d)$/.test(value)) {
         message = "Enter a number between 0 and 100.";
+      } else if (value && rule === "imei" && !/^\d{15}$/.test(value)) {
+        message = "Enter all 15 digits of the IMEI.";
+      } else if (value && rule === "imei" && input.name === "imei2" && value === (form.elements.imei1.value || "").trim()) {
+        message = "IMEI 2 must be different from IMEI 1.";
       }
       if (message) valid = false;
       setFieldError(field, message);
@@ -188,6 +192,14 @@
     if (stepEl.querySelector("[data-photo]") && !validatePhotos(stepEl)) valid = false;
     return valid;
   }
+
+  // IMEIs: keep digits only, so pasted spaces or dashes don't fail validation
+  form.querySelectorAll("[data-imei]").forEach(function (input) {
+    input.addEventListener("input", function () {
+      var digits = input.value.replace(/\D/g, "").slice(0, 15);
+      if (digits !== input.value) input.value = digits;
+    });
+  });
 
   // ---------- step navigation ----------
   // the tracker tells screen readers which step is current, not just colour
