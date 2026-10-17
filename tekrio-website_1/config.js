@@ -34,6 +34,12 @@ module.exports = {
     process.env.TEKRIO_BACKEND_API_BASE_URL ||
     "https://backend-production-17e07.up.railway.app/api/v1",
 
+  // Shared secret for the backend's website endpoints (sell-request intake
+  // and the seller offer page). Must match WEBSITE_API_KEY on the backend.
+  // Unset = sell requests stay local only and the offer page shows
+  // "not available yet".
+  BACKEND_API_KEY: process.env.TEKRIO_BACKEND_API_KEY || "",
+
   // ---- PENDING: TEKRIO app/API connection ----
   // Once the TEKRIO mobile app's backend exposes an API/webhook for
   // receiving leads and handling OTP login, set these and the server

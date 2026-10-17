@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your Offer | TEKRIO</title>
+<meta name="description" content="Review and accept the best offer for your device.">
+<meta name="robots" content="noindex, nofollow">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="TEKRIO">
+<meta property="og:title" content="Your Offer | TEKRIO">
+<meta property="og:description" content="Review and accept the best offer for your device.">
+<meta property="og:url" content="https://www.tekrio.in/offer.html">
+<meta property="og:image" content="https://www.tekrio.in/images/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://www.tekrio.in/images/og-image.png">
+<meta name="theme-color" content="#18243D">
+<link rel="icon" href="/images/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="icon" href="/images/favicon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css?v=eee8c8af">
+
+<!-- Google Analytics (GA4): set TEKRIO_GA_ID when running `npm run build` -->
+<script defer src="/js/analytics.js?v=08ce2f16" data-ga-id=""></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="header-inner">
+    <a href="/" class="brand">
+      <img src="/images/logo-mark.png" alt="" class="brand-logo" width="44" height="44">
+      <span class="brand-text">
+        <span class="brand-mark">TEKRIO</span>
+        <span class="brand-tag">Connect. Compare. Close.</span>
+      </span>
+    </a>
+    <nav class="main-nav" aria-label="Primary">
+      <a href="/" class="">Home</a>
+      <a href="/how-it-works.html" class="">How It Works</a>
+      <a href="/for-customers.html" class="">Customers</a>
+      <a href="/for-retailers.html" class="">Retailers</a>
+      <a href="/for-buyers.html" class="">Buyers</a>
+      <a href="/partner.html" class="">Partners</a>
+      <a href="/contact.html" class="">Contact</a>
+    </nav>
+    <div class="header-actions">
+      <a href="/sell.html" class="login-link ">Sell Your Device</a>
+      <a href="/for-retailers.html#register" class="login-link">Retailer Sign Up</a>
+      <a href="/for-buyers.html#join" class="login-link">Buyer Sign Up</a>
+    </div>
+    <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mobilePanel">
+      <span class="visually-hidden">Menu</span>
+      <svg width="22" height="16" viewBox="0 0 22 16" fill="none" aria-hidden="true">
+        <path d="M0 1H22M0 8H22M0 15H22" stroke="currentColor" stroke-width="2"/>
+      </svg>
+    </button>
+  </div>
+  <div class="mobile-panel" id="mobilePanel">
+    <a href="/">Home</a>
+    <a href="/how-it-works.html">How It Works</a>
+    <a href="/for-customers.html">For Customers</a>
+    <a href="/for-retailers.html">For Retailers</a>
+    <a href="/for-buyers.html">For Buyers</a>
+    <a href="/partner.html">Partner With Us</a>
+    <a href="/contact.html">Contact</a>
+    <a href="/sell.html">Sell Your Device</a>
+    <a href="/for-retailers.html#register">Retailer Sign Up</a>
+    <a href="/for-buyers.html#join">Buyer Sign Up</a>
+  </div>
+</header>
+
+<main id="main">
+<section class="page-hero">
+  <div class="container">
+    <div class="breadcrumb"><a href="/">Home</a> / Your Offer</div>
+    <h1>Your offer</h1>
+    <p>Verified buyers have made their offers on your device. Here's the highest one.</p>
+  </div>
+</section>
+
+<section class="section-paper">
+  <div class="container">
+    <div class="form-card sell-card offer-card" aria-live="polite">
+      <!-- loading -->
+      <div data-offer-state="loading">
+        <p class="form-sub">Loading your offer&hellip;</p>
+      </div>
+
+      <!-- open offer -->
+      <div data-offer-state="open" hidden>
+        <span class="eyebrow-stamp is-light">Best offer</span>
+        <p class="offer-device" data-offer-device></p>
+        <p class="offer-amount" data-offer-amount></p>
+        <p class="form-sub">Reference <strong data-offer-ref></strong> &middot; accept by <strong data-offer-expires></strong></p>
+        <p>After you accept, you get a handover code here. The buyer calls you and collects the phone from your address within 60 minutes: they check it, you give them the code, and they pay you on the spot by UPI or cash. Then you confirm here that you've been paid.</p>
+        <p class="price-note"><strong>Please note:</strong> if the phone's condition differs from what you described, the buyer can propose a lower price. You decide whether to accept it; you're never obliged to sell.</p>
+        <button type="button" class="btn btn-gold" data-offer-accept>Accept this offer</button>
+        <p class="form-status" role="status" data-offer-status></p>
+        <p class="form-note">Don't want to sell? Just ignore this offer; it expires on its own. Questions? Email <a href="mailto:info@tekrio.in">info@tekrio.in</a>.</p>
+      </div>
+
+      <!-- accepted: the buyer collects from the seller's address -->
+      <div data-offer-state="accepted" hidden>
+        <span class="eyebrow-stamp is-light">Offer accepted</span>
+        <h2>Your buyer will collect the phone</h2>
+        <p class="offer-device" data-offer-device></p>
+        <p class="offer-amount" data-offer-handover-amount></p>
+        <p class="form-sub">Reference <strong data-offer-ref></strong> &middot; pickup by <strong data-offer-deadline></strong></p>
+
+        <div class="offer-vendor">
+          <p class="offer-vendor-name" data-offer-vendor-name></p>
+          <p data-offer-vendor-address></p>
+          <p><a data-offer-vendor-phone></a></p>
+        </div>
+
+        <!-- the buyer proposed a lower price at pickup -->
+        <div class="offer-box" data-offer-revision hidden>
+          <p><strong>The buyer proposed a new price: <span data-offer-revision-amount></span></strong></p>
+          <p class="form-sub">Reason: <span data-offer-revision-reason></span></p>
+          <div class="offer-actions">
+            <button type="button" class="btn btn-gold" data-offer-action="revision" data-value="accept">Accept new price</button>
+            <button type="button" class="btn btn-outline-dark" data-offer-action="revision" data-value="decline">Decline and cancel the sale</button>
+          </div>
+        </div>
+
+        <!-- the code the buyer enters in the TEKRIO app when they take the phone -->
+        <div class="offer-box offer-code-box" data-offer-code-box hidden>
+          <p>Your handover code</p>
+          <p class="offer-code" data-offer-code></p>
+          <p class="form-note">Give it to the buyer in person when you hand over the phone. Never share it over a call or message.</p>
+        </div>
+
+        <ol class="next-list">
+          <li><strong>Get ready</strong> &mdash; the buyer will call to agree a time. Keep the phone, its accessories and a government photo ID ready.</li>
+          <li><strong>The buyer comes to you</strong>, checks the phone and records your ID in the TEKRIO app.</li>
+          <li><strong>Hand over the phone with your code.</strong> The buyer enters it in the app.</li>
+          <li><strong>Get paid</strong> by the buyer on the spot, by UPI or cash, then confirm it on this page.</li>
+        </ol>
+        <p class="form-status" role="status" data-offer-status></p>
+
+        <details class="offer-more" data-offer-cancel-box>
+          <summary>Changed your mind, or a problem with the buyer?</summary>
+          <p><button type="button" class="btn btn-outline-dark" data-offer-action="cancel" data-value="changed_mind">I don't want to sell anymore</button></p>
+          <label for="offer-note">Problem with the buyer (for example they refused the price, or asked you to sell outside TEKRIO)</label>
+          <textarea id="offer-note" rows="3" maxlength="500" data-offer-note></textarea>
+          <p><button type="button" class="btn btn-outline-dark" data-offer-action="cancel" data-value="vendor_problem">Report a problem</button></p>
+        </details>
+        <p class="form-note">Tip: back up your data and sign out of your accounts before the pickup. Questions? Email <a href="mailto:info@tekrio.in">info@tekrio.in</a>.</p>
+      </div>
+
+      <!-- collected: the seller confirms the payment -->
+      <div data-offer-state="collected" hidden>
+        <span class="eyebrow-stamp is-light">Phone collected</span>
+        <h2>Did <span data-offer-vendor-name></span> pay you?</h2>
+        <p class="offer-device" data-offer-device></p>
+        <p class="offer-amount" data-offer-handover-amount></p>
+        <p>The buyer has collected your phone. Once <span data-offer-handover-amount></span> is in your account or in your hand, confirm it below.</p>
+        <div class="offer-actions">
+          <button type="button" class="btn btn-gold" data-offer-action="paid" data-value="paid">I've been paid <span data-offer-handover-amount></span></button>
+        </div>
+        <p class="form-status" role="status" data-offer-status></p>
+        <p class="form-sub">Reference <strong data-offer-ref></strong> &middot; if we don't hear from you by <strong data-offer-confirm-by></strong>, we'll take it that you were paid.</p>
+
+        <details class="offer-more">
+          <summary>Haven't been paid?</summary>
+          <p>Call the buyer first: <a data-offer-vendor-phone></a>. If they still don't pay, tell us and our team will step in.</p>
+          <label for="offer-unpaid-note">What happened? (optional)</label>
+          <textarea id="offer-unpaid-note" rows="3" maxlength="500" data-offer-unpaid-note></textarea>
+          <p><button type="button" class="btn btn-outline-dark" data-offer-action="paid" data-value="not_paid">I haven't been paid</button></p>
+        </details>
+      </div>
+
+      <!-- check-in after a missed handover -->
+      <div data-offer-state="checkin" hidden>
+        <span class="eyebrow-stamp is-light">Quick question</span>
+        <h2>Did you sell your phone to <span data-offer-vendor-name></span>?</h2>
+        <p>The sale wasn't completed in the TEKRIO app. Please tell us what happened.</p>
+        <div class="offer-actions">
+          <button type="button" class="btn btn-gold" data-offer-action="checkin" data-value="sold">Yes, I sold it</button>
+          <button type="button" class="btn btn-outline-dark" data-offer-action="checkin" data-value="not_sold">No, I didn't sell it</button>
+        </div>
+        <p class="form-status" role="status" data-offer-status></p>
+      </div>
+
+      <!-- finished -->
+      <div class="sell-done" data-offer-state="completed" hidden>
+        <span class="eyebrow-stamp is-light">Sale complete</span>
+        <h2>Thanks for selling with TEKRIO</h2>
+        <p>Reference: <strong data-offer-ref></strong>. We hope it went smoothly.</p>
+        <a href="/" class="btn btn-outline-dark">Back to Home</a>
+      </div>
+
+      <div data-offer-state="review" hidden>
+        <span class="eyebrow-stamp is-light">We're on it</span>
+        <h2>Thanks for letting us know</h2>
+        <p>Our team will look into this sale and contact you. Reference: <strong data-offer-ref></strong>.</p>
+        <p class="form-note">Questions? Email <a href="mailto:info@tekrio.in">info@tekrio.in</a>.</p>
+      </div>
+
+      <!-- expired / closed / cancelled / invalid / error -->
+      <div data-offer-state="closed" hidden>
+        <span class="eyebrow-stamp is-light">Offer unavailable</span>
+        <h2 data-offer-title>This offer has expired</h2>
+        <p data-offer-message>Offers are open for a limited time. If you'd still like to sell your device, you can list it again.</p>
+        <a href="/sell" class="btn btn-gold">Sell your device</a>
+        <p class="form-note">Questions? Email <a href="mailto:info@tekrio.in">info@tekrio.in</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="/js/offer.js?v=5773f5e1" defer></script>
+
+</main>
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <a href="/" class="footer-logo"><img src="/images/logo-mark.png" alt="" width="36" height="36"><span class="brand-mark">TEKRIO</span></a>
+        <p class="footer-tagline">Connect. Compare. Close.</p>
+        <p>TEKRIO is a pre-owned device marketplace connecting customers, retailers and buyers in one transparent ecosystem.</p>
+        <ul class="social-links">
+          <li><a href="https://www.instagram.com/tekrio_/" target="_blank" rel="noopener" aria-label="TEKRIO on Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg></a></li>
+          <li><a href="https://www.facebook.com/profile.php?id=61595333512484" target="_blank" rel="noopener" aria-label="TEKRIO on Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 21v-7.5h2.6l.4-3h-3V8.6c0-.9.3-1.5 1.6-1.5h1.6V4.4c-.3 0-1.2-.1-2.3-.1-2.3 0-3.9 1.4-3.9 4v2.2H8v3h2.5V21h3z"/></svg></a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Company</h2>
+        <ul>
+          <li><a href="/about.html">About Us</a></li>
+          <li><a href="/how-it-works.html">How It Works</a></li>
+          <li><a href="/partner.html">Partner With Us</a></li>
+          <li><a href="/faq.html">FAQs</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>For You</h2>
+        <ul>
+          <li><a href="/sell.html">Sell Your Device</a></li>
+          <li><a href="/for-customers.html">For Customers</a></li>
+          <li><a href="/for-retailers.html">For Retailers</a></li>
+          <li><a href="/for-buyers.html">For Buyers</a></li>
+          <li><a href="/contact.html">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Legal</h2>
+        <ul>
+          <li><a href="/privacy-terms.html">Privacy Policy</a></li>
+          <li><a href="/privacy-terms.html#terms">Terms &amp; Conditions</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Contact</h2>
+        <ul>
+          <li><a href="tel:+919845127927">+91 98451 27927</a></li>
+          <li><a href="tel:+919060805052">+91 90608 05052</a></li>
+          <li><a href="tel:+919035566685">+91 90355 66685</a></li>
+          <li><a href="tel:+919916311144">+91 99163 11144</a></li>
+          <li><a href="tel:+919916311145">+91 99163 11145</a></li>
+          <li><a href="mailto:info@tekrio.in">info@tekrio.in</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Office Address</h2>
+        <address class="footer-address">
+          No. 1 L2/05, Sky Walk Complex<br>
+          1st Floor, Assaye Road<br>
+          Ulsoor, Bangalore 560005
+        </address>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; <span id="year">2026</span> TEKRIO. All rights reserved.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="/js/main.js?v=09aa0b49" defer></script>
+</body>
+</html>

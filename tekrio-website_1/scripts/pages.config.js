@@ -53,7 +53,7 @@ module.exports = [
     active: "sell",
     title: "Sell Your Device - Get Offers From Verified Buyers | TEKRIO",
     description:
-      "Sell your pre-owned phone on TEKRIO. Select your device, add details, and get offers from verified buyers through a partnered store near you.",
+      "Sell your pre-owned phone online on TEKRIO. Add your device details and photos, get the highest offer from verified buyers by email, and get paid at your doorstep.",
   },
   {
     file: "for-customers.html",
@@ -77,7 +77,7 @@ module.exports = [
     active: "buyers",
     title: "For Buyers - Source Inspected Pre-Owned Devices | TEKRIO",
     description:
-      "Source inspected pre-owned devices from partnered stores. IMEI and photo-documented listings in one marketplace feed, with less sourcing cost and time.",
+      "Source pre-owned devices listed by partnered stores and by sellers online. Photo-documented listings in one marketplace feed, with less sourcing cost and time.",
   },
   {
     file: "partner.html",
@@ -110,6 +110,15 @@ module.exports = [
     title: "Privacy Policy & Terms and Conditions | TEKRIO",
     description:
       "Read TEKRIO's Privacy Policy and Terms & Conditions.",
+  },
+  {
+    // linked only from the seller offer email; carries a private token
+    file: "offer.html",
+    out: "offer.html",
+    active: "",
+    title: "Your Offer | TEKRIO",
+    description: "Review and accept the best offer for your device.",
+    noindex: true,
   },
   {
     file: "404.html",
