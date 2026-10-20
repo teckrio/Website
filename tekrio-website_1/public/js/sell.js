@@ -94,11 +94,50 @@
       reader.readAsDataURL(file);
     });
   }
+  // Photo buttons under each tile. Phones and tablets: open the camera, or pick
+  // an existing photo. Computers: one picker button, named the way the system
+  // names its photo collection.
+  var ua = navigator.userAgent || "";
+  var isAppleTouch = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  var isMobile = isAppleTouch || /Android|Mobi/i.test(ua);
+  var pickLabel = isMobile ? "Choose from files" : /Mac/.test(ua) ? "Choose from library" : "Choose from gallery";
+  function photoButton(label, onClick) {
+    var button = document.createElement("button");
+    button.type = "button";
+    button.className = "photo-action";
+    button.textContent = label;
+    button.addEventListener("click", onClick);
+    return button;
+  }
+
   form.querySelectorAll("[data-photo]").forEach(function (slotEl) {
     var slot = slotEl.getAttribute("data-photo");
     var input = slotEl.querySelector("input[type=file]");
     var preview = slotEl.querySelector("img");
-    input.addEventListener("change", function () {
+    var name = slotEl.querySelector(".photo-name");
+    var what = name ? name.firstChild.textContent.trim().toLowerCase() : slot;
+    var actions = document.createElement("div");
+    actions.className = "photo-actions";
+    var inputs = [input];
+    if (isMobile) {
+      var camera = document.createElement("input");
+      camera.type = "file";
+      camera.accept = "image/*";
+      camera.setAttribute("capture", "environment");
+      camera.className = "visually-hidden";
+      camera.tabIndex = -1;
+      slotEl.appendChild(camera);
+      inputs.push(camera);
+      actions.appendChild(photoButton("Open camera", function () { camera.click(); }));
+    }
+    actions.appendChild(photoButton(pickLabel, function () { input.click(); }));
+    actions.querySelectorAll("button").forEach(function (button) {
+      button.setAttribute("aria-label", button.textContent + " for the " + what + " photo");
+    });
+    slotEl.insertBefore(actions, slotEl.querySelector(".field-error"));
+    inputs.forEach(function (picker) { picker.addEventListener("change", function () { onPhoto(picker); }); });
+
+    function onPhoto(input) {
       var file = input.files && input.files[0];
       if (!file) return;
       busy[slot] = true;
@@ -119,7 +158,7 @@
           slotEl.classList.remove("is-busy");
           input.value = ""; // choosing the same file again still fires "change"
         });
-    });
+    }
   });
   function validatePhotos(stepEl) {
     var valid = true;

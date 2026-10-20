@@ -197,9 +197,9 @@ const SCHEMAS = {
     optional: [],
   },
   sell: {
-    required: ["platform", "brand", "model", "storage", "imei1", "name", "mobile", "email", "address", "city", "pincode"],
+    required: ["platform", "brand", "model", "storage", "imei1", "imei2", "name", "mobile", "email", "address", "city", "pincode"],
     optional: [
-      "imei2", "ram", "batteryHealth", "screenDamage", "bodyScratches", "deviceAge",
+      "ram", "batteryHealth", "screenDamage", "bodyScratches", "deviceAge",
       "box", "bill", "charger", "catalogVersion",
     ],
   },
@@ -254,11 +254,11 @@ function validateLead(type, body) {
       return { ok: false, message: "Battery health should be a number between 0 and 100." };
     }
     const imei1 = String(body.imei1).trim();
-    const imei2 = String(body.imei2 || "").trim();
-    if (!/^\d{15}$/.test(imei1) || (imei2 && !/^\d{15}$/.test(imei2))) {
-      return { ok: false, message: "Enter the 15-digit IMEI number." };
+    const imei2 = String(body.imei2).trim();
+    if (!/^\d{15}$/.test(imei1) || !/^\d{15}$/.test(imei2)) {
+      return { ok: false, message: "Enter both 15-digit IMEI numbers." };
     }
-    if (imei2 && imei1 === imei2) {
+    if (imei1 === imei2) {
       return { ok: false, message: "IMEI 2 must be different from IMEI 1." };
     }
   }
@@ -420,7 +420,7 @@ function sellRequestPayload(record) {
       model: record.model,
       storage: record.storage,
       imei1: record.imei1,
-      imei2: record.imei2 || "",
+      imei2: record.imei2,
       ram: record.ram || "",
       batteryHealth: record.batteryHealth ? Number(record.batteryHealth) : null,
       catalogVersion: record.catalogVersion || "",
