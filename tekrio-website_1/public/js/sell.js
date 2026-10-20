@@ -94,11 +94,13 @@
       reader.readAsDataURL(file);
     });
   }
-  // Phones and tablets: tapping a photo tile opens a sheet offering the camera
-  // or an existing photo. Computers: clicking the tile opens the file picker.
+  // iPhone and iPad: the tile opens iOS's own menu (Photo Library, Take Photo,
+  // Choose File). Other phones: Android's picker often has no camera option,
+  // so tapping a tile opens our sheet offering the camera or an existing
+  // photo. Computers: clicking the tile opens the file picker.
   var ua = navigator.userAgent || "";
   var isAppleTouch = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
-  var isMobile = isAppleTouch || /Android|Mobi/i.test(ua);
+  var useSheet = !isAppleTouch && /Android|Mobi/i.test(ua);
   function photoButton(label, onClick) {
     var button = document.createElement("button");
     button.type = "button";
@@ -151,7 +153,7 @@
     var name = slotEl.querySelector(".photo-name");
     var what = name ? name.firstChild.textContent.trim().toLowerCase() : slot;
     var inputs = [input];
-    if (isMobile) {
+    if (useSheet) {
       var camera = document.createElement("input");
       camera.type = "file";
       camera.accept = "image/*";
