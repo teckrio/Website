@@ -1045,7 +1045,6 @@ section { padding: 88px 0; }
 .photo-slot.is-busy .photo-tile { opacity: 0.6; cursor: progress; }
 .photo-slot.invalid .photo-tile { border-color: var(--danger); }
 .photo-slot .field-error { margin-top: 4px; }
-.photo-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .photo-action {
   flex: 1 1 auto;
   min-height: 36px;
@@ -1061,6 +1060,19 @@ section { padding: 88px 0; }
 }
 .photo-action:hover { border-color: var(--teal); color: var(--teal); }
 .photo-action:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
+/* phones: the sheet that opens when a photo tile is tapped */
+.photo-sheet { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: flex-end; background: rgba(15, 23, 42, 0.45); }
+.photo-sheet[hidden] { display: none; }
+.photo-sheet-panel {
+  display: grid; gap: 8px; width: 100%;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  border-radius: 16px 16px 0 0; background: var(--white);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.15);
+}
+.photo-sheet-title { max-width: none; margin: 0 0 4px; text-align: center; font-weight: 600; color: var(--ink); }
+.photo-sheet .photo-action { min-height: 48px; font-size: 1rem; }
+.photo-sheet .photo-action.is-cancel { border-color: transparent; color: var(--slate); }
+body.sheet-open { overflow: hidden; }
 .photo-slot.invalid .field-error { display: block; }
 .sell-done h2 { margin: 14px 0 10px; }
 .next-list { padding-left: 1.2em; color: var(--slate); }

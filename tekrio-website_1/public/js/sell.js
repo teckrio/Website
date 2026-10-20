@@ -94,13 +94,11 @@
       reader.readAsDataURL(file);
     });
   }
-  // Photo buttons under each tile. Phones and tablets: open the camera, or pick
-  // an existing photo. Computers: one picker button, named the way the system
-  // names its photo collection.
+  // Phones and tablets: tapping a photo tile opens a sheet offering the camera
+  // or an existing photo. Computers: clicking the tile opens the file picker.
   var ua = navigator.userAgent || "";
   var isAppleTouch = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
   var isMobile = isAppleTouch || /Android|Mobi/i.test(ua);
-  var pickLabel = isMobile ? "Choose from files" : /Mac/.test(ua) ? "Choose from library" : "Choose from gallery";
   function photoButton(label, onClick) {
     var button = document.createElement("button");
     button.type = "button";
@@ -110,14 +108,48 @@
     return button;
   }
 
+  // one shared sheet, filled in for the tile that was tapped
+  var sheet = null;
+  var sheetTitle, sheetCamera, sheetFiles, sheetReturn;
+  function closeSheet() {
+    sheet.hidden = true;
+    document.body.classList.remove("sheet-open");
+    if (sheetReturn) sheetReturn.focus();
+  }
+  function openSheet(title, camera, files, returnTo) {
+    if (!sheet) {
+      sheet = document.createElement("div");
+      sheet.className = "photo-sheet";
+      sheet.hidden = true;
+      sheet.innerHTML =
+        '<div class="photo-sheet-panel" role="dialog" aria-modal="true" aria-labelledby="photo-sheet-title">' +
+        '<p class="photo-sheet-title" id="photo-sheet-title"></p></div>';
+      var panel = sheet.firstChild;
+      sheetTitle = panel.firstChild;
+      panel.appendChild(photoButton("Open camera", function () { closeSheet(); sheetCamera.click(); }));
+      panel.appendChild(photoButton("Choose from files", function () { closeSheet(); sheetFiles.click(); }));
+      var cancel = photoButton("Cancel", closeSheet);
+      cancel.classList.add("is-cancel");
+      panel.appendChild(cancel);
+      sheet.addEventListener("click", function (e) { if (e.target === sheet) closeSheet(); });
+      sheet.addEventListener("keydown", function (e) { if (e.key === "Escape") closeSheet(); });
+      document.body.appendChild(sheet);
+    }
+    sheetTitle.textContent = title;
+    sheetCamera = camera;
+    sheetFiles = files;
+    sheetReturn = returnTo;
+    sheet.hidden = false;
+    document.body.classList.add("sheet-open");
+    sheet.querySelector("button").focus();
+  }
+
   form.querySelectorAll("[data-photo]").forEach(function (slotEl) {
     var slot = slotEl.getAttribute("data-photo");
     var input = slotEl.querySelector("input[type=file]");
     var preview = slotEl.querySelector("img");
     var name = slotEl.querySelector(".photo-name");
     var what = name ? name.firstChild.textContent.trim().toLowerCase() : slot;
-    var actions = document.createElement("div");
-    actions.className = "photo-actions";
     var inputs = [input];
     if (isMobile) {
       var camera = document.createElement("input");
@@ -128,13 +160,15 @@
       camera.tabIndex = -1;
       slotEl.appendChild(camera);
       inputs.push(camera);
-      actions.appendChild(photoButton("Open camera", function () { camera.click(); }));
+      // the tile is a <label>: stop it opening the picker and ask first. The
+      // sheet's own input.click() also passes through here and must go on.
+      slotEl.querySelector(".photo-tile").addEventListener("click", function (e) {
+        if (e.target === input) return;
+        e.preventDefault();
+        var title = what.charAt(0).toUpperCase() + what.slice(1) + " photo";
+        openSheet(title, camera, input, input);
+      });
     }
-    actions.appendChild(photoButton(pickLabel, function () { input.click(); }));
-    actions.querySelectorAll("button").forEach(function (button) {
-      button.setAttribute("aria-label", button.textContent + " for the " + what + " photo");
-    });
-    slotEl.insertBefore(actions, slotEl.querySelector(".field-error"));
     inputs.forEach(function (picker) { picker.addEventListener("change", function () { onPhoto(picker); }); });
 
     function onPhoto(input) {
