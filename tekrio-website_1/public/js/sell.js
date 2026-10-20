@@ -95,12 +95,10 @@
     });
   }
   // Phones and tablets: tapping a photo tile opens a sheet offering the camera
-  // or an existing photo. Computers: one picker button under each tile, named
-  // the way the system names its photo collection.
+  // or an existing photo. Computers: clicking the tile opens the file picker.
   var ua = navigator.userAgent || "";
   var isAppleTouch = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
   var isMobile = isAppleTouch || /Android|Mobi/i.test(ua);
-  var pickLabel = isMobile ? "Choose from files" : /Mac/.test(ua) ? "Choose from library" : "Choose from gallery";
   function photoButton(label, onClick) {
     var button = document.createElement("button");
     button.type = "button";
@@ -170,13 +168,6 @@
         var title = what.charAt(0).toUpperCase() + what.slice(1) + " photo";
         openSheet(title, camera, input, input);
       });
-    } else {
-      var actions = document.createElement("div");
-      actions.className = "photo-actions";
-      var pick = photoButton(pickLabel, function () { input.click(); });
-      pick.setAttribute("aria-label", pickLabel + " for the " + what + " photo");
-      actions.appendChild(pick);
-      slotEl.insertBefore(actions, slotEl.querySelector(".field-error"));
     }
     inputs.forEach(function (picker) { picker.addEventListener("change", function () { onPhoto(picker); }); });
 

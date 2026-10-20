@@ -1045,7 +1045,6 @@ section { padding: 88px 0; }
 .photo-slot.is-busy .photo-tile { opacity: 0.6; cursor: progress; }
 .photo-slot.invalid .photo-tile { border-color: var(--danger); }
 .photo-slot .field-error { margin-top: 4px; }
-.photo-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .photo-action {
   flex: 1 1 auto;
   min-height: 36px;
