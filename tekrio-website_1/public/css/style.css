@@ -1045,6 +1045,22 @@ section { padding: 88px 0; }
 .photo-slot.is-busy .photo-tile { opacity: 0.6; cursor: progress; }
 .photo-slot.invalid .photo-tile { border-color: var(--danger); }
 .photo-slot .field-error { margin-top: 4px; }
+.photo-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.photo-action {
+  flex: 1 1 auto;
+  min-height: 36px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  background: var(--white);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.photo-action:hover { border-color: var(--teal); color: var(--teal); }
+.photo-action:focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; }
 .photo-slot.invalid .field-error { display: block; }
 .sell-done h2 { margin: 14px 0 10px; }
 .next-list { padding-left: 1.2em; color: var(--slate); }

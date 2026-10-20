@@ -25,7 +25,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/style.css?v=eee8c8af">
+<link rel="stylesheet" href="/css/style.css?v=aaaf6e5a">
 
 <!-- Google Analytics (GA4): set TEKRIO_GA_ID when running `npm run build` -->
 <script defer src="/js/analytics.js?v=08ce2f16" data-ga-id=""></script>
@@ -178,12 +178,12 @@
               <p class="field-error"></p>
             </div>
             <div class="field" data-field data-rule="imei">
-              <label for="s-imei2">IMEI 2 <span class="opt">(optional)</span></label>
-              <input id="s-imei2" name="imei2" type="text" inputmode="numeric" maxlength="15" autocomplete="off" placeholder="15 digits" data-imei>
+              <label for="s-imei2">IMEI 2</label>
+              <input id="s-imei2" name="imei2" type="text" inputmode="numeric" maxlength="15" autocomplete="off" placeholder="15 digits" required data-imei>
               <p class="field-error"></p>
             </div>
           </div>
-          <p class="form-note">Dial <strong>*#06#</strong> on the phone you're selling to see its IMEI numbers. Dual-SIM phones have two.</p>
+          <p class="form-note">Dial <strong>*#06#</strong> on the phone you're selling to see both IMEI numbers.</p>
           <div class="field">
             <span class="field-label">Accessories you have</span>
             <div class="choice-row">
@@ -329,7 +329,7 @@
   </div>
 </section>
 
-<script src="/js/sell.js?v=0923c302" defer></script>
+<script src="/js/sell.js?v=6b1408d5" defer></script>
 
 </main>
 <footer class="site-footer">
