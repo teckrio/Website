@@ -16,10 +16,27 @@
 
   var match = /(?:^|[#&])t=([A-Za-z0-9_-]+)/.exec(window.location.hash);
   var token = match ? match[1] : "";
+  // The token is kept for this tab only, so a reload still finds the offer
+  // (and the handover code) after it's taken out of the address bar.
+  var TOKEN_KEY = "tekrio-offer-token";
+  function remember(value) {
+    try {
+      if (value) window.sessionStorage.setItem(TOKEN_KEY, value);
+      else window.sessionStorage.removeItem(TOKEN_KEY);
+    } catch (e) { /* storage blocked: the emailed link still works */ }
+  }
+  if (token) remember(token);
+  else {
+    try { token = window.sessionStorage.getItem(TOKEN_KEY) || ""; } catch (e) { token = ""; }
+  }
   // keep the token out of history/bookmarks shared later
-  if (token && window.history.replaceState) {
+  if (match && window.history.replaceState) {
     window.history.replaceState(null, "", window.location.pathname);
   }
+  // another offer link opened in this tab only changes the #fragment
+  window.addEventListener("hashchange", function () {
+    if (/(?:^|[#&])t=/.test(window.location.hash)) window.location.reload();
+  });
 
   function show(state) {
     card.querySelectorAll("[data-offer-state]").forEach(function (el) {
@@ -108,7 +125,10 @@
   }
   function failed(result) {
     var text = closedText(result.body);
-    if (text) return closed(text[0], text[1]);
+    if (text) {
+      if (result.body.code === "OFFER_NOT_FOUND") remember("");
+      return closed(text[0], text[1]);
+    }
     closed("Something went wrong", (result.body && result.body.message) || "We couldn't load your offer right now. Please try again shortly.");
   }
 
@@ -117,9 +137,34 @@
     return;
   }
 
-  call("/api/offer")
-    .then(function (result) { return result.ok ? render(result.body.data) : failed(result); })
-    .catch(function () { closed("Something went wrong", "Please check your connection and reload this page."); });
+  // While the sale is open the page checks for changes every 15 seconds
+  // (a new price from the buyer, the pickup), so the seller never has to reload.
+  var LIVE = ["awaiting_seller", "accepted", "collected", "checkin", "review"];
+  var status = "";
+  var busy = false;
+  var actions = 0; // a reply that started before a button press is out of date
+  function load(first) {
+    var seen = actions;
+    return call("/api/offer")
+      .then(function (result) {
+        if (busy || seen !== actions) return;
+        if (result.ok) {
+          status = result.body.data.status;
+          return render(result.body.data);
+        }
+        status = "";
+        if (first || closedText(result.body)) failed(result);
+      })
+      .catch(function () {
+        if (first) closed("Something went wrong", "Please check your connection and reload this page.");
+      });
+  }
+  load(true);
+  function refresh() {
+    if (!busy && !document.hidden && LIVE.indexOf(status) >= 0) load(false);
+  }
+  window.setInterval(refresh, 15000);
+  document.addEventListener("visibilitychange", refresh);
 
   // Every action is an explicit button press (a POST), never the link itself:
   // email security scanners open links automatically and must not act.
@@ -163,9 +208,12 @@
     button.disabled = true;
     button.textContent = "Please wait...";
     if (statusEl) statusEl.className = "form-status";
+    busy = true;
+    actions += 1;
     call(action === "accept" ? "/api/offer/accept" : "/api/offer/" + action, extra)
       .then(function (result) {
         if (result.ok) {
+          status = result.body.data.status;
           render(result.body.data);
           if (window.gtag) window.gtag("event", "offer_" + action + (value ? "_" + value : ""));
           return;
@@ -183,6 +231,7 @@
         }
       })
       .finally(function () {
+        busy = false;
         button.disabled = false;
         button.innerHTML = label;
       });
