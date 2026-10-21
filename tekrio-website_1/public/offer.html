@@ -160,9 +160,27 @@
         <h2>Did <span data-offer-vendor-name></span> pay you?</h2>
         <p class="offer-device" data-offer-device></p>
         <p class="offer-amount" data-offer-handover-amount></p>
-        <p>The buyer has collected your phone. Once <span data-offer-handover-amount></span> is in your account or in your hand, confirm it below.</p>
-        <div class="offer-actions">
+        <p data-offer-paid-simple>The buyer has collected your phone. Once <span data-offer-handover-amount></span> is in your account or in your hand, confirm it below.</p>
+        <div class="offer-actions" data-offer-paid-simple>
           <button type="button" class="btn btn-gold" data-offer-action="paid" data-value="paid">I've been paid <span data-offer-handover-amount></span></button>
+        </div>
+        <!-- web-vendor sales: the seller types what they actually received -->
+        <div data-offer-paid-amount hidden>
+          <p>The buyer has collected your phone. Tell us the amount you actually received, so we can close the sale.</p>
+          <div class="field">
+            <label class="field-label" for="offer-paid-input">Amount you received (&#8377;)</label>
+            <input id="offer-paid-input" type="text" inputmode="numeric" autocomplete="off" maxlength="9" data-offer-amount-input>
+          </div>
+          <div class="field">
+            <span class="field-label">How did they pay?</span>
+            <div class="choice-row">
+              <label class="choice"><input type="radio" name="offer-paid-method" value="upi"><span>UPI</span></label>
+              <label class="choice"><input type="radio" name="offer-paid-method" value="cash"><span>Cash</span></label>
+            </div>
+          </div>
+          <div class="offer-actions">
+            <button type="button" class="btn btn-gold" data-offer-action="paid" data-value="amount">Confirm amount</button>
+          </div>
         </div>
         <p class="form-status" role="status" data-offer-status></p>
         <p class="form-sub">Reference <strong data-offer-ref></strong> &middot; if we don't hear from you by <strong data-offer-confirm-by></strong>, we'll take it that you were paid.</p>
@@ -192,8 +210,24 @@
       <div class="sell-done" data-offer-state="completed" hidden>
         <span class="eyebrow-stamp is-light">Sale complete</span>
         <h2>Thanks for selling with TEKRIO</h2>
+        <p data-offer-sold-line hidden>You sold your <span data-offer-device></span> for <strong data-offer-sold-amount></strong>.</p>
         <p>Reference: <strong data-offer-ref></strong>. We hope it went smoothly.</p>
         <a href="/" class="btn btn-outline-dark">Back to Home</a>
+
+        <details class="offer-more" data-offer-report hidden>
+          <summary>Wrong amount?</summary>
+          <p>If <span data-offer-vendor-name></span> paid you a different amount, tell us by <strong data-offer-report-by></strong>.</p>
+          <div class="field">
+            <label class="field-label" for="offer-report-input">Amount you actually received (&#8377;)</label>
+            <input id="offer-report-input" type="text" inputmode="numeric" autocomplete="off" maxlength="9" data-offer-amount-input>
+          </div>
+          <div class="offer-actions">
+            <button type="button" class="btn btn-outline-dark" data-offer-action="report" data-value="paid">Report this amount</button>
+            <button type="button" class="btn btn-outline-dark" data-offer-action="report" data-value="not_paid">I wasn't paid</button>
+          </div>
+          <p class="form-status" role="status" data-offer-status></p>
+        </details>
+        <p class="form-note" data-offer-reported hidden>Thanks, we've received your report. Our team will look into it and contact you if needed.</p>
       </div>
 
       <div data-offer-state="review" hidden>
@@ -215,7 +249,7 @@
   </div>
 </section>
 
-<script src="/js/offer.js?v=5773f5e1" defer></script>
+<script src="/js/offer.js?v=a1c9b36f" defer></script>
 
 </main>
 <footer class="site-footer">

@@ -1053,6 +1053,7 @@ const server = http.createServer(async (req, res) => {
       "/api/offer/revision": "/seller-offers/revision", // accept/decline a revised price
       "/api/offer/cancel": "/seller-offers/cancel",
       "/api/offer/checkin": "/seller-offers/checkin", // "did you sell?" after a missed handover
+      "/api/offer/report": "/seller-offers/report-amount", // a different amount, after the sale
     };
     if (OFFER_ACTIONS[pathname] && req.method === "POST") {
       res.setHeader("Cache-Control", "no-store");
@@ -1082,6 +1083,9 @@ const server = http.createServer(async (req, res) => {
       ["decision", "reason", "note", "answer"].forEach((k) => {
         if (typeof input[k] === "string") forward[k] = input[k].slice(0, 500);
       });
+      // the amount the seller says they received, and how
+      if (Number.isSafeInteger(input.amountPaise) && input.amountPaise > 0) forward.amountPaise = input.amountPaise;
+      if (input.method === "upi" || input.method === "cash") forward.method = input.method;
       try {
         const { status, body } = await postBackend(OFFER_ACTIONS[pathname], forward);
         if (status === 200 && body && body.data) return sendJson(res, 200, { data: body.data });

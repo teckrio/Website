@@ -89,6 +89,21 @@
     // the code waits until the seller has decided on a revised price
     card.querySelector("[data-offer-code-box]").hidden = !h.code || Boolean(h.revision);
     fill("data-offer-code", h.code || "");
+
+    // Web-vendor sales: the seller types the amount they received, and after
+    // the sale can report a different amount until reportUntil.
+    var askAmount = Boolean(h.askPaidAmount);
+    toggle("data-offer-paid-simple", !askAmount);
+    toggle("data-offer-paid-amount", askAmount);
+    toggle("data-offer-sold-line", askAmount);
+    fill("data-offer-sold-amount", rupees(h.amountPaise));
+    fill("data-offer-report-by", when(h.reportUntil));
+    var reportOpen = askAmount && !h.amountReport && h.reportUntil && new Date(h.reportUntil) > new Date();
+    toggle("data-offer-report", Boolean(reportOpen));
+    toggle("data-offer-reported", Boolean(h.amountReport));
+  }
+  function toggle(attr, visible) {
+    card.querySelectorAll("[" + attr + "]").forEach(function (el) { el.hidden = !visible; });
   }
 
   function render(offer) {
@@ -174,17 +189,42 @@
     "revision:decline": "Decline the new price? The sale will be cancelled and you keep your phone.",
     "cancel:changed_mind": "Cancel this sale? You keep your phone and nothing more is needed.",
     "checkin:sold": "Confirm you sold the phone to this buyer?",
+    "report:not_paid": "Tell TEKRIO you weren't paid for this sale? Our team will contact you and the buyer.",
   };
+  // "10,000" or "₹10000" -> 1000000 paise; null if it isn't a whole rupee amount
+  function paiseFrom(input) {
+    var digits = String((input && input.value) || "").replace(/[₹,\s]/g, "");
+    return /^\d{2,7}$/.test(digits) ? Number(digits) * 100 : null;
+  }
   function act(button) {
     var action = button.getAttribute("data-offer-action") || "accept";
     var value = button.getAttribute("data-value") || "";
-    var question = CONFIRM[action + (value ? ":" + value : "")] || CONFIRM[action];
-    if (question && !window.confirm(question)) return;
     var section = button.closest("[data-offer-state]");
     var statusEl = section.querySelector("[data-offer-status]");
     var extra = {};
+    // the seller's own figure: the amount they received (and how, if asked)
+    var needsAmount = (action === "paid" && value === "amount") || (action === "report" && value === "paid");
+    if (needsAmount) {
+      var input = (button.closest("[data-offer-paid-amount], [data-offer-report]") || section).querySelector("[data-offer-amount-input]");
+      var paise = paiseFrom(input);
+      if (paise === null) {
+        input.focus();
+        if (statusEl) {
+          statusEl.textContent = "Enter the amount you received in rupees, for example 10000.";
+          statusEl.className = "form-status show err";
+        }
+        return;
+      }
+      extra.amountPaise = paise;
+      var method = section.querySelector("input[name='offer-paid-method']:checked");
+      if (method) extra.method = method.value;
+    }
+    var question = needsAmount
+      ? "Confirm you received " + rupees(extra.amountPaise) + " from the buyer?"
+      : CONFIRM[action + (value ? ":" + value : "")] || CONFIRM[action];
+    if (question && !window.confirm(question)) return;
     if (action === "revision") extra.decision = value;
-    if (action === "checkin" || action === "paid") extra.answer = value;
+    if (action === "checkin" || action === "paid" || action === "report") extra.answer = value === "amount" ? "paid" : value;
     if (action === "paid" && value === "not_paid") {
       var unpaid = card.querySelector("[data-offer-unpaid-note]");
       if (unpaid.value.trim()) extra.note = unpaid.value.trim();
