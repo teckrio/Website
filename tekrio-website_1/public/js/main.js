@@ -25,6 +25,48 @@
     });
   }
 
+  // ---------- city ----------
+  // Asked once, on the first visit to any page except the emailed offer
+  // page. The choice is kept in localStorage, shown in the header, and
+  // fills the Sell form's City field (sell.js listens for "tekrio:city").
+  var cityDialog = document.getElementById("cityDialog");
+  if (cityDialog && typeof cityDialog.showModal === "function") {
+    var CITY_KEY = "tekrio.city";
+    var cityForm = cityDialog.querySelector("form");
+    var cityInputs = [].slice.call(cityForm.querySelectorAll("input[name=city]"));
+    var savedCity = null;
+    try { savedCity = localStorage.getItem(CITY_KEY); } catch (e) { /* storage blocked */ }
+    // ignore a stored city that's no longer on the list
+    if (!cityInputs.some(function (i) { return i.value === savedCity; })) savedCity = null;
+
+    var showCity = function () {
+      document.querySelectorAll("[data-city-label]").forEach(function (el) {
+        el.textContent = savedCity || "Choose city";
+      });
+    };
+    var openCity = function () {
+      cityInputs.forEach(function (i) { if (i.value === savedCity) i.checked = true; });
+      if (panel) panel.classList.remove("open");
+      if (toggle) toggle.setAttribute("aria-expanded", "false");
+      cityDialog.showModal();
+    };
+    // Escape only closes it once a city has been chosen
+    cityDialog.addEventListener("cancel", function (e) { if (!savedCity) e.preventDefault(); });
+    cityForm.addEventListener("submit", function () {
+      var picked = cityInputs.filter(function (i) { return i.checked; })[0];
+      if (!picked) return;
+      savedCity = picked.value;
+      try { localStorage.setItem(CITY_KEY, savedCity); } catch (e) { /* storage blocked */ }
+      showCity();
+      document.dispatchEvent(new CustomEvent("tekrio:city", { detail: savedCity }));
+    });
+    document.querySelectorAll("[data-city-open]").forEach(function (btn) {
+      btn.addEventListener("click", openCity);
+    });
+    showCity();
+    if (!savedCity && !/^\/offer(\.html)?$/.test(location.pathname)) openCity();
+  }
+
   // ---------- footer year ----------
   var yearEl = document.getElementById("year");
   if (yearEl) yearEl.textContent = new Date().getFullYear();

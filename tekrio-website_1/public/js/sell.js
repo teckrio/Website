@@ -24,6 +24,7 @@
   var current = 1;
 
   // ---------- catalog ----------
+  var catalogLists = { storages: null, rams: null }; // restored when a picked model is cleared
   function fillSelect(select, options) {
     options.forEach(function (opt) {
       var o = document.createElement("option");
@@ -34,6 +35,7 @@
   }
   function applyCatalog(catalog) {
     form.elements.catalogVersion.value = catalog.version || "";
+    catalogLists = { storages: catalog.storages || [], rams: catalog.rams || [] };
     form.querySelectorAll("[data-catalog-list]").forEach(function (sel) {
       fillSelect(sel, catalog[sel.getAttribute("data-catalog-list")] || []);
     });
@@ -52,18 +54,169 @@
     .then(function (json) { applyCatalog(json.data); })
     .catch(function () { applyCatalog(FALLBACK); });
 
+  // ---------- brands and models ----------
+  // The brand tiles in the page are a fixed fallback list. When the backend's
+  // device catalog answers (via /api/device-brands on this server) they're
+  // replaced by its brands and logos, and picking a brand lists its models,
+  // whose storage/RAM variants then narrow the Storage and RAM choices.
+  var brandGrid = form.querySelector("[data-brand-grid]");
+  var modelGrid = form.querySelector("[data-model-grid]");
+  var modelInput = form.elements.model;
+  var models = []; // the chosen brand's models, [] when the backend has none
+  var modelRequest = 0; // ignores a slow answer for a brand no longer chosen
+
+  function brandTile(brand, index) {
+    var label = document.createElement("label");
+    label.className = "brand-tile";
+    var input = document.createElement("input");
+    input.type = "radio";
+    input.name = "brand";
+    input.value = brand.name;
+    input.setAttribute("data-platform", brand.platform);
+    input.setAttribute("data-brand-id", brand.id);
+    if (index === 0) input.required = true;
+    var logo = document.createElement("span");
+    logo.className = "brand-logo";
+    logo.setAttribute("aria-hidden", "true");
+    if (brand.logo) {
+      var img = document.createElement("img");
+      img.src = brand.logo;
+      img.alt = "";
+      img.loading = "lazy";
+      img.onerror = function () { logo.textContent = brand.name.charAt(0); };
+      logo.appendChild(img);
+    } else {
+      logo.textContent = brand.name.charAt(0);
+    }
+    var name = document.createElement("span");
+    name.className = "brand-name";
+    name.textContent = brand.name;
+    label.appendChild(input);
+    label.appendChild(logo);
+    label.appendChild(name);
+    return label;
+  }
+  fetch("/api/device-brands")
+    .then(function (res) {
+      if (!res.ok) throw new Error("brands " + res.status);
+      return res.json();
+    })
+    .then(function (json) {
+      var brands = (json.data || []).slice().sort(function (a, b) {
+        // iPhone first, then Android brands A–Z
+        if (a.platform !== b.platform) return a.platform === "apple" ? -1 : 1;
+        return a.name.localeCompare(b.name);
+      });
+      if (!brands.length || form.elements.brand.value) return; // keep a choice already made
+      brandGrid.textContent = "";
+      brands.forEach(function (b, i) { brandGrid.appendChild(brandTile(b, i)); });
+    })
+    .catch(function () { /* keep the fixed brand list */ });
+
+  function setOptions(select, values, placeholder) {
+    var keep = select.value;
+    select.textContent = "";
+    var first = document.createElement("option");
+    first.value = "";
+    first.textContent = placeholder;
+    select.appendChild(first);
+    fillSelect(select, values);
+    if (values.indexOf(keep) !== -1) select.value = keep;
+  }
+  function unique(list) {
+    return list.filter(function (v, i) { return v && list.indexOf(v) === i; });
+  }
+  // a picked model offers only its own storage/RAM variants
+  function applyVariants(model) {
+    var storage = form.elements.storage;
+    var ram = form.elements.ram;
+    var variants = model ? model.variants : [];
+    if (!variants.length && !catalogLists.storages) return; // catalog still loading
+    var storages = unique(variants.map(function (v) { return v.storage; }));
+    var rams = unique(variants.map(function (v) { return v.ram; }));
+    setOptions(storage, storages.length ? storages : catalogLists.storages, "Select storage");
+    setOptions(ram, rams.length ? rams : catalogLists.rams, "Select RAM");
+  }
+  function renderModels() {
+    var q = modelInput.value.trim().toLowerCase();
+    var exact = models.filter(function (m) { return m.name.toLowerCase() === q; })[0] || null;
+    modelGrid.textContent = "";
+    models.forEach(function (m) {
+      // typing narrows the list; a picked model keeps the whole list in view
+      if (q && !exact && m.name.toLowerCase().indexOf(q) === -1) return;
+      var button = document.createElement("button");
+      button.type = "button";
+      button.className = "model-tile" + (m === exact ? " is-selected" : "");
+      button.setAttribute("aria-pressed", m === exact ? "true" : "false");
+      var pic = document.createElement("span");
+      pic.className = "model-pic";
+      pic.setAttribute("aria-hidden", "true");
+      if (m.image) {
+        var img = document.createElement("img");
+        img.src = m.image;
+        img.alt = "";
+        img.loading = "lazy";
+        pic.appendChild(img);
+      }
+      var name = document.createElement("span");
+      name.textContent = m.name;
+      button.appendChild(pic);
+      button.appendChild(name);
+      button.addEventListener("click", function () {
+        modelInput.value = m.name;
+        renderModels();
+        applyVariants(m);
+        modelInput.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      modelGrid.appendChild(button);
+    });
+    modelGrid.hidden = !modelGrid.children.length;
+    applyVariants(exact);
+  }
+  modelInput.addEventListener("input", function () { if (models.length) renderModels(); });
+
+  function loadModels(brandId) {
+    var request = ++modelRequest;
+    models = [];
+    modelGrid.hidden = true;
+    applyVariants(null);
+    if (!brandId) return;
+    fetch("/api/device-models?brand=" + encodeURIComponent(brandId))
+      .then(function (res) {
+        if (!res.ok) throw new Error("models " + res.status);
+        return res.json();
+      })
+      .then(function (json) {
+        if (request !== modelRequest) return;
+        models = json.data || [];
+        renderModels();
+      })
+      .catch(function () { /* the model stays a typed answer */ });
+  }
+
   // ---------- platform-specific fields ----------
   // The brand decides the platform: Apple is an iPhone, every other brand
   // is Android. RAM is asked for Android only, battery health for iPhone only.
-  form.elements.brand.addEventListener("change", function () {
-    var brand = form.elements.brand.value;
-    var platform = !brand ? "" : brand === "Apple" ? "apple" : "android";
+  brandGrid.addEventListener("change", function (e) {
+    var picked = e.target;
+    var platform = picked.getAttribute("data-platform") || "";
     form.elements.platform.value = platform;
     form.querySelectorAll("[data-android-only]").forEach(function (el) { el.hidden = platform !== "android"; });
     form.querySelectorAll("[data-apple-only]").forEach(function (el) { el.hidden = platform !== "apple"; });
-    form.elements.model.placeholder =
+    modelInput.placeholder =
       platform === "apple" ? "e.g. iPhone 13" : platform === "android" ? "e.g. Galaxy S22" : "e.g. iPhone 13 or Galaxy S22";
+    modelInput.value = "";
+    loadModels(picked.getAttribute("data-brand-id"));
   });
+
+  // ---------- city ----------
+  // filled in from the city picked in the site-wide popup (main.js)
+  var citySelect = form.elements.city;
+  function applyCity(city) {
+    if (city && !citySelect.value) citySelect.value = city;
+  }
+  try { applyCity(localStorage.getItem("tekrio.city")); } catch (e) { /* storage blocked */ }
+  document.addEventListener("tekrio:city", function (e) { citySelect.value = e.detail; });
 
   // ---------- photos ----------
   // Each photo is redrawn as a JPEG no larger than MAX_EDGE px: small enough
