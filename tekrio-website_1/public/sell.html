@@ -25,7 +25,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/style.css?v=e0c7e82f">
+<link rel="stylesheet" href="/css/style.css?v=f8546912">
 
 <!-- Google Analytics (GA4): set TEKRIO_GA_ID when running `npm run build` -->
 <script defer src="/js/analytics.js?v=08ce2f16" data-ga-id=""></script>
@@ -163,14 +163,40 @@
             </div>
             <p class="field-error"></p>
           </div>
-          <div class="field" data-field>
-            <label for="s-model">Model</label>
-            <input id="s-model" name="model" type="text" required autocomplete="off" placeholder="e.g. iPhone 13 or Galaxy S22">
-            <!-- the brand's models, when the backend has them; typing filters them -->
-            <div class="model-grid" data-model-grid hidden></div>
+          <!-- Model, the way the TEKRIO app picks it: the brand's catalog models
+               (one row per colour), then one RAM/storage configuration. Without
+               the catalog it's a typed model plus Storage/RAM below (sell.js). -->
+          <div class="field" data-field data-model-catalog hidden>
+            <input type="hidden" data-model-picked required>
+            <span class="field-label" id="s-model-label">Model</span>
+            <div class="model-picked" data-model-summary hidden>
+              <span><b data-model-name></b> <span data-model-colour></span></span>
+              <button type="button" class="btn-ghost" data-model-change>Change</button>
+            </div>
+            <div class="model-browser" data-model-browser>
+              <input type="search" class="model-search" placeholder="Search models" aria-labelledby="s-model-label" autocomplete="off" data-model-search>
+              <ul class="model-list" aria-labelledby="s-model-label" data-model-list></ul>
+              <div class="model-pager" data-model-pager hidden>
+                <button type="button" aria-label="Previous page" data-model-prev>&lsaquo;</button>
+                <span data-model-page></span>
+                <button type="button" aria-label="Next page" data-model-next>&rsaquo;</button>
+              </div>
+              <p class="model-typed-link"><button type="button" class="btn-ghost" data-model-type>Can&rsquo;t find your model? Type it in</button></p>
+            </div>
             <p class="field-error"></p>
           </div>
-          <div class="field-pair">
+          <div class="field" data-field data-model-typed>
+            <label for="s-model">Model</label>
+            <input id="s-model" name="model" type="text" required autocomplete="off" placeholder="e.g. iPhone 13 or Galaxy S22">
+            <input type="hidden" name="colour">
+            <p class="field-error"></p>
+          </div>
+          <div class="field" data-field data-model-config hidden>
+            <label for="s-config" data-config-label>RAM and storage</label>
+            <select id="s-config" required data-config-select><option value="">Select configuration</option></select>
+            <p class="field-error"></p>
+          </div>
+          <div class="field-pair" data-variant-selects>
             <div class="field" data-field>
               <label for="s-storage">Storage</label>
               <select id="s-storage" name="storage" required data-catalog-list="storages"><option value="">Select storage</option></select>
@@ -380,7 +406,7 @@
   </div>
 </section>
 
-<script src="/js/sell.js?v=ca6df090" defer></script>
+<script src="/js/sell.js?v=037fb8ea" defer></script>
 
 </main>
 <footer class="site-footer">
