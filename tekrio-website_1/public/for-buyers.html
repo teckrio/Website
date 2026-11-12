@@ -25,7 +25,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/style.css?v=b8e1c9ef">
+<link rel="stylesheet" href="/css/style.css?v=e0c7e82f">
 
 <!-- Google Analytics (GA4): set TEKRIO_GA_ID when running `npm run build` -->
 <script defer src="/js/analytics.js?v=08ce2f16" data-ga-id=""></script>
@@ -51,6 +51,7 @@
       <a href="/contact.html" class="">Contact</a>
     </nav>
     <div class="header-actions">
+      <button type="button" class="city-pill" data-city-open><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span class="visually-hidden">Your city: </span><span data-city-label>Choose city</span></button>
       <a href="/sell.html" class="login-link ">Sell Your Device</a>
       <a href="/for-retailers.html#register" class="login-link">Retailer Sign Up</a>
       <a href="/for-buyers.html#join" class="login-link">Buyer Sign Up</a>
@@ -63,6 +64,7 @@
     </button>
   </div>
   <div class="mobile-panel" id="mobilePanel">
+    <button type="button" class="mobile-city" data-city-open><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span>Selling in <b data-city-label>Choose city</b></span><span class="mobile-city-change">Change</span></button>
     <a href="/">Home</a>
     <a href="/how-it-works.html">How It Works</a>
     <a href="/for-customers.html">For Customers</a>
@@ -75,6 +77,43 @@
     <a href="/for-buyers.html#join">Buyer Sign Up</a>
   </div>
 </header>
+
+<!-- city picker: opens on the first visit to any page (except the emailed
+     offer page) and from the header's city button; main.js -->
+<dialog class="city-dialog" id="cityDialog" aria-labelledby="cityTitle">
+  <form method="dialog" class="city-card">
+    <div class="city-intro">
+      <svg class="city-net" viewBox="0 0 320 260" aria-hidden="true">
+        <g stroke="#22D3EE" stroke-opacity=".4" stroke-width="1" fill="none"><path d="M30 220L90 160L160 190L230 120L290 150"/><path d="M90 160L120 100L200 70"/><path d="M160 190L180 240"/><path d="M230 120L260 60"/></g>
+        <g fill="#22D3EE"><circle cx="30" cy="220" r="3"/><circle cx="90" cy="160" r="4.5"/><circle cx="160" cy="190" r="3.5"/><circle cx="230" cy="120" r="4"/><circle cx="290" cy="150" r="3"/><circle cx="120" cy="100" r="3"/><circle cx="200" cy="70" r="3"/><circle cx="260" cy="60" r="2.5"/><circle cx="180" cy="240" r="2.5"/></g>
+      </svg>
+      <img src="/images/logo-mark.png" alt="" width="48" height="48">
+      <h2 id="cityTitle">Welcome to TEKRIO</h2>
+      <p>Choose your city and we&rsquo;ll send a verified buyer to your doorstep.</p>
+      <ul class="city-points">
+        <li>Verified buyers</li>
+        <li>Doorstep pickup</li>
+        <li>Paid on the spot</li>
+      </ul>
+    </div>
+    <div class="city-pick">
+      <fieldset class="city-field">
+        <legend>Where are you selling from?</legend>
+        <div class="city-grid">
+          <label class="city-tile"><input type="radio" name="city" value="Bangalore" checked><span class="city-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span>Bangalore</label>
+          <label class="city-tile"><input type="radio" name="city" value="Kolar"><span class="city-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span>Kolar</label>
+          <label class="city-tile"><input type="radio" name="city" value="Hoskote"><span class="city-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span>Hoskote</label>
+          <label class="city-tile"><input type="radio" name="city" value="Tumkur"><span class="city-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span>Tumkur</label>
+          <label class="city-tile"><input type="radio" name="city" value="Chikmagalur"><span class="city-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span>Chikmagalur</label>
+          <label class="city-tile"><input type="radio" name="city" value="Mysore"><span class="city-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span>Mysore</label>
+          <label class="city-tile"><input type="radio" name="city" value="Mandya"><span class="city-pin"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span>Mandya</label>
+        </div>
+      </fieldset>
+      <button type="submit" class="btn btn-gold btn-block">Continue</button>
+      <p class="city-note">More cities coming soon &middot; change anytime from the menu</p>
+    </div>
+  </form>
+</dialog>
 
 <main id="main">
 <section class="page-hero has-visual">
@@ -249,6 +288,6 @@
   </div>
 </footer>
 
-<script src="/js/main.js?v=09aa0b49" defer></script>
+<script src="/js/main.js?v=3d44b7e9" defer></script>
 </body>
 </html>

@@ -491,6 +491,128 @@ async function getCatalog() {
 }
 
 // ---------------------------------------------------------------------
+// brands and models for the sell form, from the app backend's device
+// catalog (GET /device-catalog/...), read with the website API key.
+// Brand logos and model pictures are served through /api/device-image/<key>
+// so the CSP can stay img-src 'self' and the browser never sees backend
+// URLs; only URLs the catalog itself returned can be fetched that way.
+// The browser falls back to a fixed brand list if these return an error.
+// ---------------------------------------------------------------------
+const DEVICE_TTL_MS = 60 * 60 * 1000;
+const DEVICE_RETRY_MS = 60 * 1000;
+const deviceCache = new Map(); // "brands" | "models:<brandId>" -> { data, fetchedAt, failedAt }
+const deviceImages = new Map(); // image key -> absolute image URL from the catalog
+const DEVICE_IMAGE_TYPES = /^image\/(png|jpeg|webp|gif|svg\+xml)$/;
+
+function backendGet(url, { timeoutMs = 6000, maxBytes = 2e6, withKey = true } = {}) {
+  return new Promise((resolve, reject) => {
+    const target = new URL(url);
+    const lib = target.protocol === "https:" ? require("https") : http;
+    const headers = withKey ? { "X-Api-Key": CONFIG.BACKEND_API_KEY } : {};
+    const req = lib.get(target, { timeout: timeoutMs, headers }, (res) => {
+      const chunks = [];
+      let size = 0;
+      res.on("data", (c) => {
+        size += c.length;
+        if (size > maxBytes) return req.destroy(new Error("response too large"));
+        chunks.push(c);
+      });
+      res.on("end", () => resolve({ status: res.statusCode, headers: res.headers, body: Buffer.concat(chunks) }));
+    });
+    req.on("timeout", () => req.destroy(new Error("timeout")));
+    req.on("error", reject);
+  });
+}
+async function backendGetJson(endpoint) {
+  const { status, body } = await backendGet(CONFIG.BACKEND_API_BASE_URL.replace(/\/$/, "") + endpoint);
+  if (status !== 200) throw new Error(`HTTP ${status}`);
+  const json = JSON.parse(body.toString("utf8"));
+  if (!json || !json.data) throw new Error("unexpected response shape");
+  return json.data;
+}
+
+// remembers a catalog image URL and returns the local path that serves it
+function deviceImagePath(raw) {
+  if (!raw || typeof raw !== "string") return null;
+  let url;
+  try {
+    url = new URL(raw, CONFIG.BACKEND_API_BASE_URL);
+  } catch (e) {
+    return null;
+  }
+  if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+  const key = crypto.createHash("sha256").update(url.href).digest("hex").slice(0, 24);
+  deviceImages.set(key, url.href);
+  return `/api/device-image/${key}`;
+}
+
+async function cachedDevice(key, load) {
+  const entry = deviceCache.get(key) || { data: null, fetchedAt: 0, failedAt: 0 };
+  if (entry.data && Date.now() - entry.fetchedAt < DEVICE_TTL_MS) return entry.data;
+  if (!entry.data && Date.now() - entry.failedAt < DEVICE_RETRY_MS) {
+    throw new Error("device catalog recently unavailable");
+  }
+  try {
+    entry.data = await load();
+    entry.fetchedAt = Date.now();
+  } catch (e) {
+    console.error(`[device-catalog] ${key} failed:`, e.message);
+    entry.failedAt = Date.now();
+    if (!entry.data) {
+      deviceCache.set(key, entry);
+      throw e;
+    }
+    entry.fetchedAt = Date.now() - DEVICE_TTL_MS + DEVICE_RETRY_MS; // serve stale, retry soon
+  }
+  deviceCache.set(key, entry);
+  return entry.data;
+}
+
+function getDeviceBrands() {
+  return cachedDevice("brands", async () => {
+    if (!CONFIG.BACKEND_API_KEY) throw new Error("TEKRIO_BACKEND_API_KEY not set");
+    const lists = await Promise.all(
+      ["apple", "android"].map((p) => backendGetJson(`/device-catalog/brands?platform=${p}`))
+    );
+    return lists
+      .flat()
+      .filter((b) => b && b.active !== false && b.id && b.name)
+      .map((b) => ({
+        id: String(b.id),
+        name: String(b.name),
+        platform: b.platform === "apple" ? "apple" : "android",
+        logo: deviceImagePath(b.logoUrl),
+      }));
+  });
+}
+
+function getDeviceModels(brandId) {
+  return cachedDevice(`models:${brandId}`, async () => {
+    if (!CONFIG.BACKEND_API_KEY) throw new Error("TEKRIO_BACKEND_API_KEY not set");
+    const items = [];
+    // the backend pages models 40 at a time; 20 pages is far more than any brand has
+    for (let page = 1; page <= 20; page++) {
+      const data = await backendGetJson(
+        `/device-catalog/brands/${encodeURIComponent(brandId)}/models?limit=40&page=${page}`
+      );
+      const batch = Array.isArray(data.items) ? data.items : [];
+      items.push(...batch);
+      if (!batch.length || items.length >= (Number(data.total) || 0)) break;
+    }
+    return items
+      .filter((m) => m && m.active !== false && m.name)
+      .map((m) => ({
+        name: String(m.name),
+        // the API has no model picture yet; picked up as soon as it sends one
+        image: deviceImagePath(m.imageUrl || m.image || null),
+        variants: (Array.isArray(m.variants) ? m.variants : [])
+          .filter((v) => v && v.storage)
+          .map((v) => ({ storage: String(v.storage), ram: v.ram ? String(v.ram) : "" })),
+      }));
+  });
+}
+
+// ---------------------------------------------------------------------
 // admin basic auth (credentials via config.js / env — see README)
 // ---------------------------------------------------------------------
 function checkBasicAuth(req) {
@@ -1040,6 +1162,51 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 200, { data });
       } catch (e) {
         return sendJson(res, 503, { message: "Catalog unavailable." });
+      }
+    }
+    if (pathname === "/api/device-brands" && req.method === "GET") {
+      try {
+        const data = await getDeviceBrands();
+        res.setHeader("Cache-Control", "public, max-age=300");
+        return sendJson(res, 200, { data });
+      } catch (e) {
+        return sendJson(res, 503, { message: "Brands unavailable." });
+      }
+    }
+    if (pathname === "/api/device-models" && req.method === "GET") {
+      const brandId = new URL(req.url, "http://localhost").searchParams.get("brand") || "";
+      if (!/^[A-Za-z0-9_-]{1,64}$/.test(brandId)) return sendJson(res, 400, { message: "Invalid brand." });
+      try {
+        // brand ids come from our own brand list; anything else is refused
+        const brands = await getDeviceBrands();
+        if (!brands.some((b) => b.id === brandId)) return sendJson(res, 404, { message: "Unknown brand." });
+        const data = await getDeviceModels(brandId);
+        res.setHeader("Cache-Control", "public, max-age=300");
+        return sendJson(res, 200, { data });
+      } catch (e) {
+        return sendJson(res, 503, { message: "Models unavailable." });
+      }
+    }
+    if (pathname.startsWith("/api/device-image/") && req.method === "GET") {
+      const imageUrl = deviceImages.get(pathname.slice("/api/device-image/".length));
+      if (!imageUrl) return sendJson(res, 404, { message: "Not found." });
+      try {
+        // the website key only goes to the backend itself, never to a storage host
+        const sameHost = new URL(imageUrl).host === new URL(CONFIG.BACKEND_API_BASE_URL).host;
+        const img = await backendGet(imageUrl, { maxBytes: 1.5e6, withKey: sameHost });
+        const type = String(img.headers["content-type"] || "").split(";")[0].trim().toLowerCase();
+        if (img.status !== 200 || !DEVICE_IMAGE_TYPES.test(type)) throw new Error(`HTTP ${img.status} ${type}`);
+        res.writeHead(200, {
+          "Content-Type": type,
+          "Content-Length": img.body.length,
+          "Cache-Control": "public, max-age=86400",
+          // an SVG opened on its own must not be able to run script
+          "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'",
+        });
+        return res.end(img.body);
+      } catch (e) {
+        console.error("[device-catalog] image failed:", e.message);
+        return sendJson(res, 502, { message: "Image unavailable." });
       }
     }
 
