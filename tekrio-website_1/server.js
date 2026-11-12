@@ -199,7 +199,7 @@ const SCHEMAS = {
   sell: {
     required: ["platform", "brand", "model", "storage", "imei1", "imei2", "name", "mobile", "email", "address", "city", "pincode"],
     optional: [
-      "ram", "batteryHealth", "screenDamage", "bodyScratches", "deviceAge",
+      "ram", "colour", "batteryHealth", "screenDamage", "bodyScratches", "deviceAge",
       "box", "bill", "charger", "catalogVersion",
     ],
   },
@@ -418,6 +418,8 @@ function sellRequestPayload(record) {
       platform: record.platform,
       brand: record.brand,
       model: record.model,
+      // the catalog colour, as the app records it; the website intake ignores it for now
+      colour: record.colour || "",
       storage: record.storage,
       imei1: record.imei1,
       imei2: record.imei2,
@@ -493,13 +495,16 @@ async function getCatalog() {
 // ---------------------------------------------------------------------
 // brands and models for the sell form, from the app backend's device
 // catalog (GET /device-catalog/...), read with the website API key.
-// Brand logos and model pictures are served through /api/device-image/<key>
+// Brand logos are served through /api/device-image/<key>
 // so the CSP can stay img-src 'self' and the browser never sees backend
 // URLs; only URLs the catalog itself returned can be fetched that way.
 // The browser falls back to a fixed brand list if these return an error.
 // ---------------------------------------------------------------------
 const DEVICE_TTL_MS = 60 * 60 * 1000;
 const DEVICE_RETRY_MS = 60 * 1000;
+// logo links from the backend are signed for an hour, so brands (and the
+// links behind /api/device-image) are refreshed well before they expire
+const BRANDS_TTL_MS = 30 * 60 * 1000;
 const deviceCache = new Map(); // "brands" | "models:<brandId>" -> { data, fetchedAt, failedAt }
 const deviceImages = new Map(); // image key -> absolute image URL from the catalog
 const DEVICE_IMAGE_TYPES = /^image\/(png|jpeg|webp|gif|svg\+xml)$/;
@@ -546,9 +551,9 @@ function deviceImagePath(raw) {
   return `/api/device-image/${key}`;
 }
 
-async function cachedDevice(key, load) {
+async function cachedDevice(key, load, ttlMs = DEVICE_TTL_MS) {
   const entry = deviceCache.get(key) || { data: null, fetchedAt: 0, failedAt: 0 };
-  if (entry.data && Date.now() - entry.fetchedAt < DEVICE_TTL_MS) return entry.data;
+  if (entry.data && Date.now() - entry.fetchedAt < ttlMs) return entry.data;
   if (!entry.data && Date.now() - entry.failedAt < DEVICE_RETRY_MS) {
     throw new Error("device catalog recently unavailable");
   }
@@ -562,7 +567,7 @@ async function cachedDevice(key, load) {
       deviceCache.set(key, entry);
       throw e;
     }
-    entry.fetchedAt = Date.now() - DEVICE_TTL_MS + DEVICE_RETRY_MS; // serve stale, retry soon
+    entry.fetchedAt = Date.now() - ttlMs + DEVICE_RETRY_MS; // serve stale, retry soon
   }
   deviceCache.set(key, entry);
   return entry.data;
@@ -574,6 +579,7 @@ function getDeviceBrands() {
     const lists = await Promise.all(
       ["apple", "android"].map((p) => backendGetJson(`/device-catalog/brands?platform=${p}`))
     );
+    deviceImages.clear(); // the previous signed links are about to expire anyway
     return lists
       .flat()
       .filter((b) => b && b.active !== false && b.id && b.name)
@@ -583,7 +589,7 @@ function getDeviceBrands() {
         platform: b.platform === "apple" ? "apple" : "android",
         logo: deviceImagePath(b.logoUrl),
       }));
-  });
+  }, BRANDS_TTL_MS);
 }
 
 function getDeviceModels(brandId) {
@@ -603,8 +609,7 @@ function getDeviceModels(brandId) {
       .filter((m) => m && m.active !== false && m.name)
       .map((m) => ({
         name: String(m.name),
-        // the API has no model picture yet; picked up as soon as it sends one
-        image: deviceImagePath(m.imageUrl || m.image || null),
+        colours: (Array.isArray(m.colours) ? m.colours : []).filter((c) => typeof c === "string" && c),
         variants: (Array.isArray(m.variants) ? m.variants : [])
           .filter((v) => v && v.storage)
           .map((v) => ({ storage: String(v.storage), ram: v.ram ? String(v.ram) : "" })),
@@ -881,6 +886,7 @@ const DEVICE_FIELD_LABELS = {
   platform: "Platform",
   brand: "Brand",
   model: "Model",
+  colour: "Colour",
   storage: "Storage",
   imei1: "IMEI 1",
   imei2: "IMEI 2",

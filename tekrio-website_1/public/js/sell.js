@@ -24,7 +24,6 @@
   var current = 1;
 
   // ---------- catalog ----------
-  var catalogLists = { storages: null, rams: null }; // restored when a picked model is cleared
   function fillSelect(select, options) {
     options.forEach(function (opt) {
       var o = document.createElement("option");
@@ -35,7 +34,6 @@
   }
   function applyCatalog(catalog) {
     form.elements.catalogVersion.value = catalog.version || "";
-    catalogLists = { storages: catalog.storages || [], rams: catalog.rams || [] };
     form.querySelectorAll("[data-catalog-list]").forEach(function (sel) {
       fillSelect(sel, catalog[sel.getAttribute("data-catalog-list")] || []);
     });
@@ -57,12 +55,28 @@
   // ---------- brands and models ----------
   // The brand tiles in the page are a fixed fallback list. When the backend's
   // device catalog answers (via /api/device-brands on this server) they're
-  // replaced by its brands and logos, and picking a brand lists its models,
-  // whose storage/RAM variants then narrow the Storage and RAM choices.
+  // replaced by its brands and logos. Picking a brand then lists its models
+  // the way the TEKRIO app does: one row per model and colour, searchable,
+  // 40 to a page, followed by one RAM/storage configuration from that
+  // model's variants. With no catalog (or "Type it in") the model is typed
+  // and Storage/RAM are chosen separately, as before.
   var brandGrid = form.querySelector("[data-brand-grid]");
-  var modelGrid = form.querySelector("[data-model-grid]");
   var modelInput = form.elements.model;
-  var models = []; // the chosen brand's models, [] when the backend has none
+  var colourInput = form.elements.colour;
+  var catalogField = form.querySelector("[data-model-catalog]");
+  var typedField = form.querySelector("[data-model-typed]");
+  var configField = form.querySelector("[data-model-config]");
+  var configSelect = form.querySelector("[data-config-select]");
+  var variantSelects = form.querySelector("[data-variant-selects]");
+  var picked = form.querySelector("[data-model-picked]");
+  var summary = form.querySelector("[data-model-summary]");
+  var browser = form.querySelector("[data-model-browser]");
+  var search = form.querySelector("[data-model-search]");
+  var list = form.querySelector("[data-model-list]");
+  var pager = form.querySelector("[data-model-pager]");
+  var PAGE_SIZE = 40;
+  var choices = []; // { model, colour } rows for the chosen brand, [] = typed mode
+  var page = 1;
   var modelRequest = 0; // ignores a slow answer for a brand no longer chosen
 
   function brandTile(brand, index) {
@@ -107,79 +121,157 @@
         if (a.platform !== b.platform) return a.platform === "apple" ? -1 : 1;
         return a.name.localeCompare(b.name);
       });
-      if (!brands.length || form.elements.brand.value) return; // keep a choice already made
+      if (!brands.length) return;
+      // a brand tapped before the list arrived stays chosen, now with its models
+      var chosen = (form.elements.brand.value || "").toLowerCase();
       brandGrid.textContent = "";
       brands.forEach(function (b, i) { brandGrid.appendChild(brandTile(b, i)); });
+      if (!chosen) return;
+      var match = [].filter.call(brandGrid.querySelectorAll("input"), function (input) {
+        return input.value.toLowerCase() === chosen;
+      })[0];
+      if (match) {
+        match.checked = true;
+        match.dispatchEvent(new Event("change", { bubbles: true }));
+      }
     })
     .catch(function () { /* keep the fixed brand list */ });
 
-  function setOptions(select, values, placeholder) {
-    var keep = select.value;
-    select.textContent = "";
+  function isAndroid() { return form.elements.platform.value === "android"; }
+  // same wording as the app: "8 GB RAM / 256 GB", or just "256 GB" on iPhone
+  function variantLabel(v) {
+    return isAndroid() && v.ram ? v.ram + " RAM / " + v.storage : v.storage;
+  }
+  // a catalog value the Storage/RAM lists don't have yet is added, so it can be sent
+  function setSelectValue(select, value) {
+    if (!value) { select.value = ""; return; }
+    var has = [].some.call(select.options, function (o) { return o.value === value; });
+    if (!has) fillSelect(select, [value]);
+    select.value = value;
+  }
+
+  function showMode(catalog) {
+    catalogField.hidden = !catalog;
+    typedField.hidden = catalog;
+    configField.hidden = true; // asked once a model is picked, as in the app
+    variantSelects.hidden = catalog;
+  }
+  function clearPick() {
+    picked.value = "";
+    modelInput.value = "";
+    colourInput.value = "";
+    summary.hidden = true;
+    browser.hidden = false;
+    configField.hidden = true;
+    setFieldError(configField, "");
+    configSelect.textContent = "";
     var first = document.createElement("option");
     first.value = "";
-    first.textContent = placeholder;
-    select.appendChild(first);
-    fillSelect(select, values);
-    if (values.indexOf(keep) !== -1) select.value = keep;
+    first.textContent = "Select configuration";
+    configSelect.appendChild(first);
+    form.elements.storage.value = "";
+    form.elements.ram.value = "";
   }
-  function unique(list) {
-    return list.filter(function (v, i) { return v && list.indexOf(v) === i; });
+
+  function pick(choice) {
+    var label = choice.model.name + (choice.colour ? " · " + choice.colour : "");
+    picked.value = label;
+    modelInput.value = choice.model.name;
+    colourInput.value = choice.colour || "";
+    form.querySelector("[data-model-name]").textContent = choice.model.name;
+    form.querySelector("[data-model-colour]").textContent = choice.colour ? "· " + choice.colour : "";
+    summary.hidden = false;
+    browser.hidden = true;
+    setFieldError(catalogField, "");
+    // one option per distinct configuration of this model
+    var seen = {};
+    configSelect.textContent = "";
+    var first = document.createElement("option");
+    first.value = "";
+    first.textContent = "Select configuration";
+    configSelect.appendChild(first);
+    choice.model.variants.forEach(function (v, i) {
+      var text = variantLabel(v);
+      if (seen[text]) return;
+      seen[text] = true;
+      var o = document.createElement("option");
+      o.value = String(i);
+      o.textContent = text;
+      configSelect.appendChild(o);
+    });
+    configSelect._variants = choice.model.variants;
+    if (configSelect.options.length === 2) {
+      configSelect.selectedIndex = 1; // only one configuration: chosen for them
+      configSelect.dispatchEvent(new Event("change"));
+    }
+    configField.hidden = false;
+    configSelect.focus();
   }
-  // a picked model offers only its own storage/RAM variants
-  function applyVariants(model) {
-    var storage = form.elements.storage;
-    var ram = form.elements.ram;
-    var variants = model ? model.variants : [];
-    if (!variants.length && !catalogLists.storages) return; // catalog still loading
-    var storages = unique(variants.map(function (v) { return v.storage; }));
-    var rams = unique(variants.map(function (v) { return v.ram; }));
-    setOptions(storage, storages.length ? storages : catalogLists.storages, "Select storage");
-    setOptions(ram, rams.length ? rams : catalogLists.rams, "Select RAM");
-  }
-  function renderModels() {
-    var q = modelInput.value.trim().toLowerCase();
-    var exact = models.filter(function (m) { return m.name.toLowerCase() === q; })[0] || null;
-    modelGrid.textContent = "";
-    models.forEach(function (m) {
-      // typing narrows the list; a picked model keeps the whole list in view
-      if (q && !exact && m.name.toLowerCase().indexOf(q) === -1) return;
+  configSelect.addEventListener("change", function () {
+    var v = configSelect.value === "" ? null : configSelect._variants[Number(configSelect.value)];
+    if (v) setFieldError(configField, "");
+    setSelectValue(form.elements.storage, v ? v.storage : "");
+    setSelectValue(form.elements.ram, v && isAndroid() ? v.ram || "" : "");
+  });
+  form.querySelector("[data-model-change]").addEventListener("click", function () {
+    clearPick();
+    search.focus();
+  });
+  form.querySelector("[data-model-type]").addEventListener("click", function () {
+    clearPick();
+    showMode(false);
+    modelInput.focus();
+  });
+
+  function renderList() {
+    var q = search.value.trim().toLowerCase();
+    var rows = choices.filter(function (c) {
+      return !q || (c.model.name + " " + (c.colour || "")).toLowerCase().indexOf(q) !== -1;
+    });
+    var pages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+    if (page > pages) page = pages;
+    list.textContent = "";
+    rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).forEach(function (c) {
+      var li = document.createElement("li");
       var button = document.createElement("button");
       button.type = "button";
-      button.className = "model-tile" + (m === exact ? " is-selected" : "");
-      button.setAttribute("aria-pressed", m === exact ? "true" : "false");
-      var pic = document.createElement("span");
-      pic.className = "model-pic";
-      pic.setAttribute("aria-hidden", "true");
-      if (m.image) {
-        var img = document.createElement("img");
-        img.src = m.image;
-        img.alt = "";
-        img.loading = "lazy";
-        pic.appendChild(img);
-      }
+      button.className = "model-row";
       var name = document.createElement("span");
-      name.textContent = m.name;
-      button.appendChild(pic);
+      name.className = "model-row-name";
+      name.textContent = c.model.name;
       button.appendChild(name);
-      button.addEventListener("click", function () {
-        modelInput.value = m.name;
-        renderModels();
-        applyVariants(m);
-        modelInput.dispatchEvent(new Event("change", { bubbles: true }));
-      });
-      modelGrid.appendChild(button);
+      if (c.colour) {
+        var colour = document.createElement("span");
+        colour.className = "model-row-colour";
+        colour.textContent = c.colour;
+        button.appendChild(colour);
+      }
+      button.addEventListener("click", function () { pick(c); });
+      li.appendChild(button);
+      list.appendChild(li);
     });
-    modelGrid.hidden = !modelGrid.children.length;
-    applyVariants(exact);
+    if (!rows.length) {
+      var empty = document.createElement("li");
+      empty.className = "model-empty";
+      empty.textContent = "No models found.";
+      list.appendChild(empty);
+    }
+    pager.hidden = pages < 2;
+    form.querySelector("[data-model-page]").textContent = "Page " + page + " of " + pages;
+    form.querySelector("[data-model-prev]").disabled = page === 1;
+    form.querySelector("[data-model-next]").disabled = page >= pages;
   }
-  modelInput.addEventListener("input", function () { if (models.length) renderModels(); });
+  search.addEventListener("input", function () { page = 1; renderList(); });
+  form.querySelector("[data-model-prev]").addEventListener("click", function () { page--; renderList(); list.scrollTop = 0; });
+  form.querySelector("[data-model-next]").addEventListener("click", function () { page++; renderList(); list.scrollTop = 0; });
 
   function loadModels(brandId) {
     var request = ++modelRequest;
-    models = [];
-    modelGrid.hidden = true;
-    applyVariants(null);
+    choices = [];
+    clearPick();
+    search.value = "";
+    page = 1;
+    showMode(false);
     if (!brandId) return;
     fetch("/api/device-models?brand=" + encodeURIComponent(brandId))
       .then(function (res) {
@@ -188,8 +280,14 @@
       })
       .then(function (json) {
         if (request !== modelRequest) return;
-        models = json.data || [];
-        renderModels();
+        // like the app: a model with colours is one row per colour
+        (json.data || []).forEach(function (m) {
+          if (!m.colours || !m.colours.length) choices.push({ model: m, colour: null });
+          else m.colours.forEach(function (c) { choices.push({ model: m, colour: c }); });
+        });
+        if (!choices.length) return; // nothing in the catalog: the model stays typed
+        showMode(true);
+        renderList();
       })
       .catch(function () { /* the model stays a typed answer */ });
   }
@@ -198,15 +296,15 @@
   // The brand decides the platform: Apple is an iPhone, every other brand
   // is Android. RAM is asked for Android only, battery health for iPhone only.
   brandGrid.addEventListener("change", function (e) {
-    var picked = e.target;
-    var platform = picked.getAttribute("data-platform") || "";
+    var brandInput = e.target;
+    var platform = brandInput.getAttribute("data-platform") || "";
     form.elements.platform.value = platform;
     form.querySelectorAll("[data-android-only]").forEach(function (el) { el.hidden = platform !== "android"; });
     form.querySelectorAll("[data-apple-only]").forEach(function (el) { el.hidden = platform !== "apple"; });
+    form.querySelector("[data-config-label]").textContent = platform === "android" ? "RAM and storage" : "Storage";
     modelInput.placeholder =
       platform === "apple" ? "e.g. iPhone 13" : platform === "android" ? "e.g. Galaxy S22" : "e.g. iPhone 13 or Galaxy S22";
-    modelInput.value = "";
-    loadModels(picked.getAttribute("data-brand-id"));
+    loadModels(brandInput.getAttribute("data-brand-id"));
   });
 
   // ---------- city ----------
@@ -386,7 +484,7 @@
   function validateStep(stepEl) {
     var valid = true;
     stepEl.querySelectorAll("[data-field]").forEach(function (field) {
-      if (field.hidden) return setFieldError(field, "");
+      if (field.closest("[hidden]")) return setFieldError(field, "");
       var inputs = field.querySelectorAll("input, select, textarea");
       if (!inputs.length) return;
       var input = inputs[0];
