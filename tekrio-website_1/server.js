@@ -494,7 +494,7 @@ async function getCatalog() {
 
 // ---------------------------------------------------------------------
 // brands and models for the sell form, from the app backend's device
-// catalog (GET /device-catalog/...), read with the website API key.
+// catalog (GET /website/device-catalog/...), read with the website API key.
 // Brand logos are served through /api/device-image/<key>
 // so the CSP can stay img-src 'self' and the browser never sees backend
 // URLs; only URLs the catalog itself returned can be fetched that way.
@@ -577,7 +577,7 @@ function getDeviceBrands() {
   return cachedDevice("brands", async () => {
     if (!CONFIG.BACKEND_API_KEY) throw new Error("TEKRIO_BACKEND_API_KEY not set");
     const lists = await Promise.all(
-      ["apple", "android"].map((p) => backendGetJson(`/device-catalog/brands?platform=${p}`))
+      ["apple", "android"].map((p) => backendGetJson(`/website/device-catalog/brands?platform=${p}`))
     );
     deviceImages.clear(); // the previous signed links are about to expire anyway
     return lists
@@ -599,7 +599,7 @@ function getDeviceModels(brandId) {
     // the backend pages models 40 at a time; 20 pages is far more than any brand has
     for (let page = 1; page <= 20; page++) {
       const data = await backendGetJson(
-        `/device-catalog/brands/${encodeURIComponent(brandId)}/models?limit=40&page=${page}`
+        `/website/device-catalog/brands/${encodeURIComponent(brandId)}/models?limit=40&page=${page}`
       );
       const batch = Array.isArray(data.items) ? data.items : [];
       items.push(...batch);
