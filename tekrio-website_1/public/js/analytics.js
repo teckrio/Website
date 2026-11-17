@@ -21,9 +21,12 @@
     window.dataLayer.push(arguments);
   };
   window.gtag("js", new Date());
-  // page URL without its #fragment: the seller offer link carries its
-  // private token there, and no page uses the fragment for anything else
+  // page URL without the seller offer link's private token: the email link
+  // carries it in the #fragment, the SMS link in ?c=
+  var params = new URLSearchParams(window.location.search);
+  params.delete("c");
+  var query = params.toString();
   window.gtag("config", id, {
-    page_location: window.location.origin + window.location.pathname + window.location.search,
+    page_location: window.location.origin + window.location.pathname + (query ? "?" + query : ""),
   });
 })();
