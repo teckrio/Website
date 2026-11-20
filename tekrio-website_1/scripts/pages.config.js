@@ -5,6 +5,7 @@ const ORG_SCHEMA = `<script type="application/ld+json">
   "@context": "https://schema.org",
   "@type": "Organization",
   "name": "TEKRIO",
+  "legalName": "Anabriya Technologies LLP",
   "url": "https://www.tekrio.in",
   "logo": "https://www.tekrio.in/images/logo.png",
   "email": "info@tekrio.in",
