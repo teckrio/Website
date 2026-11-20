@@ -3,8 +3,10 @@
 
   // Seller offer page. The emailed link is /offer#t=<token>: the token sits
   // in the #fragment so browsers never send it to any server in a URL or
-  // Referer header. It's posted to this site's /api/offer endpoints, which
-  // pass it on to the TEKRIO app backend.
+  // Referer header. The SMS link is /offer?c=<token>, because the DLT link
+  // whitelist only allows the changing part after a "?"; it's taken out of
+  // the address bar straight away. Either way the token is posted to this
+  // site's /api/offer endpoints, which pass it on to the TEKRIO app backend.
   //
   // After accepting, the seller gets a handover code; the winning buyer
   // collects the phone from the seller's address, enters the code in the
@@ -14,7 +16,8 @@
   var card = document.querySelector(".offer-card");
   if (!card) return;
 
-  var match = /(?:^|[#&])t=([A-Za-z0-9_-]+)/.exec(window.location.hash);
+  var match = /(?:^|[#&])t=([A-Za-z0-9_-]+)/.exec(window.location.hash) ||
+    /(?:^|[?&])c=([A-Za-z0-9_-]+)/.exec(window.location.search);
   var token = match ? match[1] : "";
   // The token is kept for this tab only, so a reload still finds the offer
   // (and the handover code) after it's taken out of the address bar.
